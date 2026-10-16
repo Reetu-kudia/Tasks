@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GI-IITB - Training Route: Energy Summary Card (Standalone Interactive Preview)</title>
+  <style>
+    /* Reset & Base Variables */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #0d0d0d;
+      color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header & Control Bar */
+    .header-bar {
+      border-bottom: 1px solid #27272a;
+      padding-bottom: 18px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .header-title-group .tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #f59e0b;
+    }
+
+    .header-title-group h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 4px;
+    }
+
+    .header-title-group p {
+      font-size: 13px;
+      color: #71717a;
+      margin-top: 4px;
+    }
+
+    .controls-panel {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #18181b;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+      flex-wrap: wrap;
+    }
+
+    .controls-panel span {
+      font-size: 11px;
+      font-weight: 600;
+      color: #a1a1aa;
+    }
+
+    .btn {
+      background: #27272a;
+      color: #ffffff;
+      border: 1px solid #3f3f46;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn:hover {
+      background: #3f3f46;
+    }
+
+    .btn.active-amber {
+      background: #f59e0b;
+      color: #000;
+      border-color: #f59e0b;
+    }
+
+    .btn.active-red {
+      background: #ef4444;
+      color: #fff;
+      border-color: #ef4444;
+    }
+
+    .btn.active-purple {
+      background: #8b5cf6;
+      color: #fff;
+      border-color: #8b5cf6;
+    }
+
+    /* Viewport Simulator Frame */
+    .viewport-frame {
+      max-width: 1200px;
+      margin: 0 auto 32px auto;
+      background: #121212;
+      border: 1px solid #1f1f23;
+      border-radius: 12px;
+      padding: 24px;
+      transition: width 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    .viewport-indicator {
+      display: none;
+      text-align: center;
+      margin-bottom: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #8b5cf6;
+    }
+
+    /* Section Headings */
+    .section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #a1a1aa;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Grids */
+    .grid-blocks {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .grid-context {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .grid-states {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+
+    /* ==============================================================
+       Energy Summary Card Styles (Semantic & Reusable)
+       ============================================================== */
+    .energy-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background-color: #1a1a1a;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 14px 16px;
+      color: #e4e4e7;
+      min-height: 130px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.15s ease;
+    }
+
+    .energy-card:hover {
+      border-color: #3f3f46;
+    }
+
+    /* Card Header */
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #f59e0b;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #f59e0b;
+    }
+
+    .card-badge {
+      font-size: 10px;
+      font-weight: 600;
+      color: #a1a1aa;
+      background-color: #27272a;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Metric DL list */
+    .metric-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .metric-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #71717a;
+    }
+
+    .metric-sublabel {
+      font-size: 11px;
+      color: #a1a1aa;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-unit {
+      font-size: 14px;
+      font-weight: 600;
+      color: #a1a1aa;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    /* Color Variants */
+    .variant-violet .metric-value { color: #8b5cf6; }
+    .variant-amber  .metric-value { color: #f59e0b; }
+    .variant-green  .metric-value { color: #10b981; }
+    .variant-blue   .metric-value { color: #38bdf8; }
+
+    /* Metadata Rows */
+    .meta-list {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #27272a;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      gap: 8px;
+    }
+
+    .meta-label { color: #71717a; }
+    .meta-val { color: #e4e4e7; font-weight: 600; text-align: right; }
+
+    /* Empty State */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 6px 0;
+    }
+
+    .empty-dash {
+      font-size: 26px;
+      font-weight: 700;
+      color: #52525b;
+      margin-bottom: 4px;
+    }
+
+    .empty-desc {
+      font-size: 12px;
+      color: #71717a;
+    }
+
+    /* Loading Shimmer Skeleton */
+    .skeleton-block {
+      background: linear-gradient(90deg, #27272a 25%, #3f3f46 50%, #27272a 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .sk-title { width: 90px; height: 12px; }
+    .sk-badge { width: 40px; height: 14px; }
+    .sk-label { width: 60px; height: 10px; margin-bottom: 8px; }
+    .sk-value { width: 140px; height: 28px; margin-bottom: 6px; }
+    .sk-meta  { width: 100%; height: 12px; margin-top: 8px; }
+
+    /* Footer Checklist */
+    .footer-checklist {
+      border-top: 1px solid #27272a;
+      padding-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+      color: #71717a;
+    }
+
+    .status-badge {
+      color: #10b981;
+      font-weight: 600;
+    }
+
+    @media (max-width: 640px) {
+      .energy-card {
+        padding: 12px;
+        min-height: 115px;
+      }
+      .metric-value {
+        font-size: 24px;
+      }
+      .metric-unit {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="header-bar">
+      <div class="header-title-group">
+        <span class="tag">Instructor Training Route & Sandbox</span>
+        <h1>Task 03: Energy Summary Card Component</h1>
+        <p>Interactive testing harness · Isolated learning component · Production dashboard untouched</p>
+      </div>
+
+      <!-- Live Controls -->
+      <div class="controls-panel">
+        <span>Test States:</span>
+        <button id="btn-toggle-loading" class="btn" onclick="toggleLoading()">Toggle Loading</button>
+        <button id="btn-toggle-empty" class="btn" onclick="toggleEmpty()">Toggle Empty</button>
+        
+        <span style="margin-left: 8px;">Viewport:</span>
+        <button id="vp-desktop" class="btn active-purple" onclick="setViewport('100%', this)">Desktop</button>
+        <button id="vp-tablet" class="btn" onclick="setViewport('768px', this)">Tablet (768px)</button>
+        <button id="vp-mobile" class="btn" onclick="setViewport('375px', this)">Mobile (375px)</button>
+      </div>
+    </header>
+
+    <!-- Simulation Viewport -->
+    <main id="viewport-box" class="viewport-frame">
+      <div id="viewport-notice" class="viewport-indicator">Simulating Viewport: 100%</div>
+
+      <!-- SECTION 1: UPCOMING FORECAST -->
+      <section>
+        <h2 class="section-title">
+          1. Upcoming Forecast Block Cards (Matched to Dashboard Image)
+        </h2>
+        <div id="forecast-grid" class="grid-blocks">
+          <!-- Card T -->
+          <article class="energy-card variant-violet" aria-label="Upcoming Forecast Block T">
+            <header class="card-header">
+              <div class="card-title-group">
+                <span class="card-icon">⚡</span>
+                <h3 class="card-title">Upcoming Forecast</h3>
+              </div>
+              <span class="card-badge">08:30</span>
+            </header>
+            <dl class="metric-list">
+              <div class="metric-label-row">
+                <dt class="metric-label">Time Block: T</dt>
+                <span class="metric-sublabel">08:30</span>
+              </div>
+              <dd class="metric-value-row">
+                <span class="metric-value card-val" data-orig="8250.7">8250.7</span>
+                <span class="metric-unit">MW</span>
+              </dd>
+            </dl>
+          </article>
+
+          <!-- Card T+1 -->
+          <article class="energy-card variant-violet" aria-label="Upcoming Forecast Block T+1">
+            <header class="card-header">
+              <div class="card-title-group">
+                <span class="card-icon">⚡</span>
+                <h3 class="card-title">Upcoming Forecast</h3>
+              </div>
+              <span class="card-badge">08:45</span>
+            </header>
+            <dl class="metric-list">
+              <div class="metric-label-row">
+                <dt class="metric-label">Time Block: T+1</dt>
+                <span class="metric-sublabel">08:45</span>
+              </div>
+              <dd class="metric-value-row">
+                <span class="metric-value card-val" data-orig="9389.0">9389.0</span>
+                <span class="metric-unit">MW</span>
+              </dd>
+            </dl>
+          </article>
+
+          <!-- Card T+2 -->
+          <article class="energy-card variant-violet" aria-label="Upcoming Forecast Block T+2">
+            <header class="card-header">
+              <div class="card-title-group">
+                <span class="card-icon">⚡</span>
+                <h3 class="card-title">Upcoming Forecast</h3>
+              </div>
+              <span class="card-badge">09:00</span>
+            </header>
+            <dl class="metric-list">
+              <div class="metric-label-row">
+                <dt class="metric-label">Time Block: T+2</dt>
+                <span class="metric-sublabel">09:00</span>
+              </div>
+              <dd class="metric-value-row">
+                <span class="metric-value card-val" data-orig="10791.5">10791.5</span>
+                <span class="metric-unit">MW</span>
+              </dd>
+            </dl>
+          </article>
+
+          <!-- Card T+3 -->
+          <article class="energy-card variant-violet" aria-label="Upcoming Forecast Block T+3">
+            <header class="card-header">
+              <div class="card-title-group">
+                <span class="card-icon">⚡</span>
+                <h3 class="card-title">Upcoming Forecast</h3>
+              </div>
+              <span class="card-badge">09:15</span>
+            </header>
+            <dl class="metric-list">
+              <div class="metric-label-row">
+                <dt class="metric-label">Time Block: T+3</dt>
+                <span class="metric-sublabel">09:15</span>
+              </div>
+              <dd class="metric-value-row">
+                <span class="metric-value card-val" data-orig="11694.1">11694.1</span>
+                <span class="metric-unit">MW</span>
+              </dd>
+            </dl>
+          </article>
+        </div>
+      </section>
+
+      <!-- SECTION 2: CONTEXT & LIVE METRICS -->
+      <section>
+        <h2 class="section-title">
+          2. High-Density Context & Live Metrics
+        </h2>
+        <div class="grid-context">
+          <!-- Forecast Context Card -->
+          <article class="energy-card variant-amber" aria-label="Forecast Context">
+            <header class="card-header">
+              <div class="card-title-group">
+                <span class="card-icon">📍</span>
+                <h3 class="card-title">Forecast Context</h3>
+              </div>
+              <span class="card-badge">ISTS</span>
+            </header>
+            <dl class="metric-list">
+              <div class="metric-label-row">
+                <dt class="metric-label">Installed Capacity</dt>
+              </div>
+              <dd class="metric-value-row">
+                <span class="metric-value card-val" data-orig="26655.2">26655.2</span>
+                <span class="metric-unit">MW</span>
+              </dd>
+            </dl>
+            <dl class="meta-list">
+              <div class="meta-row"><dt class="meta-label">Forecasting Type:</dt><dd class="meta-val">Nowcasting</dd></div>
+              <div class="meta-row"><dt class="meta-label">Revision:</dt><dd class="meta-val">Till Latest</dd></div>
+              <div class="meta-row"><dt class="meta-label">Time Range:</dt><dd class="meta-val">Oct 14, 00:00 → 23:45</dd></div>
+            </dl>
+          </article>
+
+          <!-- Live Solar Power -->
+          <article class="energy-card variant-green" aria-label="Live Solar Power">
+            <header class="card-header">
+              <div class="card-title-group">
+                <span class="card-icon">📈</span>
+                <h3 class="card-title">Live Solar Power</h3>
+              </div>
+              <span class="card-badge">Live IST</span>
+            </header>
+            <dl class="metric-list">
+              <div class="metric-label-row">
+                <dt class="metric-label">Actual Grid Reading</dt>
+                <span class="metric-sublabel">08:15 IST</span>
+              </div>
+              <dd class="metric-value-row">
+                <span class="metric-value card-val" data-orig="7842.3">7842.3</span>
+                <span class="metric-unit">MW</span>
+              </dd>
+            </dl>
+          </article>
+
+          <!-- Solar Radiation GHI -->
+          <article class="energy-card variant-blue" aria-label="Solar Radiation">
+            <header class="card-header">
+              <div class="card-title-group">
+                <span class="card-icon">☀️</span>
+                <h3 class="card-title">Solar Radiation (GHI)</h3>
+              </div>
+              <span class="card-badge">Clear Sky</span>
+            </header>
+            <dl class="metric-list">
+              <div class="metric-label-row">
+                <dt class="metric-label">Peak Estimated</dt>
+                <span class="metric-sublabel">12:30 IST</span>
+              </div>
+              <dd class="metric-value-row">
+                <span class="metric-value card-val" data-orig="842.5">842.5</span>
+                <span class="metric-unit">W/m²</span>
+              </dd>
+            </dl>
+          </article>
+        </div>
+      </section>
+
+      <!-- SECTION 3: STATE COMPARISON -->
+      <section>
+        <h2 class="section-title">
+          3. Side-by-Side State Verification (Active / Loading / Empty)
+        </h2>
+        <div class="grid-states">
+          <!-- Active Card -->
+          <article class="energy-card variant-violet" aria-label="Active State Demo">
+            <header class="card-header">
+              <div class="card-title-group">
+                <span class="card-icon">⚡</span>
+                <h3 class="card-title">State: Active</h3>
+              </div>
+              <span class="card-badge">Normal</span>
+            </header>
+            <dl class="metric-list">
+              <div class="metric-label-row">
+                <dt class="metric-label">Nominal Power</dt>
+                <span class="metric-sublabel">Active</span>
+              </div>
+              <dd class="metric-value-row">
+                <span class="metric-value">12450.0</span>
+                <span class="metric-unit">MW</span>
+              </dd>
+            </dl>
+          </article>
+
+          <!-- Skeleton Loading Card -->
+          <article class="energy-card" aria-busy="true" aria-live="polite" aria-label="Loading State Demo">
+            <header class="card-header">
+              <div class="skeleton-block sk-title"></div>
+              <div class="skeleton-block sk-badge"></div>
+            </header>
+            <div class="metric-list">
+              <div class="skeleton-block sk-label"></div>
+              <div class="skeleton-block sk-value"></div>
+            </div>
+          </article>
+
+          <!-- Empty Fallback Card -->
+          <article class="energy-card" aria-label="Empty State Demo">
+            <header class="card-header">
+              <div class="card-title-group">
+                <span class="card-icon">⚡</span>
+                <h3 class="card-title">State: Empty / No Data</h3>
+              </div>
+              <span class="card-badge">Offline</span>
+            </header>
+            <div class="empty-state" role="status">
+              <span class="empty-dash">—</span>
+              <p class="empty-desc">No solar generation recorded for this date.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer Checklist -->
+    <footer class="footer-checklist">
+     
+    </footer>
+  </div>
+
+  <script>
+    let isLoading = false;
+    let isEmpty = false;
+
+    function toggleLoading() {
+      isLoading = !isLoading;
+      const btn = document.getElementById('btn-toggle-loading');
+      if (isLoading) {
+        btn.classList.add('active-amber');
+        btn.textContent = 'Loading: ON';
+      } else {
+        btn.classList.remove('active-amber');
+        btn.textContent = 'Toggle Loading';
+      }
+      applyStates();
+    }
+
+    function toggleEmpty() {
+      isEmpty = !isEmpty;
+      const btn = document.getElementById('btn-toggle-empty');
+      if (isEmpty) {
+        btn.classList.add('active-red');
+        btn.textContent = 'Empty: ON';
+      } else {
+        btn.classList.remove('active-red');
+        btn.textContent = 'Toggle Empty';
+      }
+      applyStates();
+    }
+
+    function applyStates() {
+      const cards = document.querySelectorAll('#forecast-grid .energy-card, .grid-context .energy-card');
+      cards.forEach(card => {
+        const valElem = card.querySelector('.card-val');
+        const metricList = card.querySelector('.metric-list');
+        const existingEmpty = card.querySelector('.dynamic-empty');
+        const existingSkeleton = card.querySelector('.dynamic-skeleton');
+
+        if (isLoading) {
+          if (metricList) metricList.style.display = 'none';
+          if (existingEmpty) existingEmpty.style.display = 'none';
+          if (!existingSkeleton) {
+            const sk = document.createElement('div');
+            sk.className = 'dynamic-skeleton';
+            sk.innerHTML = '<div class="skeleton-block sk-label"></div><div class="skeleton-block sk-value"></div>';
+            card.appendChild(sk);
+          } else {
+            existingSkeleton.style.display = 'block';
+          }
+        } else if (isEmpty) {
+          if (existingSkeleton) existingSkeleton.style.display = 'none';
+          if (metricList) metricList.style.display = 'none';
+          if (!existingEmpty) {
+            const emp = document.createElement('div');
+            emp.className = 'empty-state dynamic-empty';
+            emp.innerHTML = '<span class="empty-dash">—</span><p class="empty-desc">No data available for the selected period</p>';
+            card.appendChild(emp);
+          } else {
+            existingEmpty.style.display = 'flex';
+          }
+        } else {
+          if (existingSkeleton) existingSkeleton.style.display = 'none';
+          if (existingEmpty) existingEmpty.style.display = 'none';
+          if (metricList) metricList.style.display = 'flex';
+        }
+      });
+    }
+
+    function setViewport(width, btnElem) {
+      const frame = document.getElementById('viewport-box');
+      const indicator = document.getElementById('viewport-notice');
+      
+      document.querySelectorAll('.controls-panel button[id^="vp-"]').forEach(b => b.classList.remove('active-purple'));
+      btnElem.classList.add('active-purple');
+
+      frame.style.width = width;
+      if (width === '100%') {
+        frame.style.border = '1px solid #1f1f23';
+        indicator.style.display = 'none';
+      } else {
+        frame.style.border = '2px dashed #8b5cf6';
+        indicator.style.display = 'block';
+        indicator.textContent = 'Simulating Viewport: ' + width;
+      }
+    }
+
+    console.log('[Training Route] EnergySummaryCard mounted with 0 errors.');
+  </script>
+</body>
+</html>
+

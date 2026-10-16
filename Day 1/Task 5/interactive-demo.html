@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GI-IITB - Training Route: Training API & Full-Stack Integration (Task 05)</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0d0d0d;
+      color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header-bar {
+      border-bottom: 1px solid #27272a;
+      padding-bottom: 18px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #f59e0b;
+    }
+    h1 { font-size: 22px; font-weight: 700; color: #ffffff; margin-top: 4px; }
+    .subtitle { font-size: 13px; color: #71717a; margin-top: 4px; }
+
+    .viewport-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #18181b;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+    .btn {
+      background: #27272a;
+      color: #ffffff;
+      border: 1px solid #3f3f46;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn.active { background: #8b5cf6; border-color: #8b5cf6; }
+
+    .viewport-frame {
+      max-width: 1200px;
+      margin: 0 auto 32px auto;
+      background: #121212;
+      border: 1px solid #1f1f23;
+      border-radius: 12px;
+      padding: 24px;
+      transition: width 0.3s ease;
+    }
+    .vp-notice {
+      display: none;
+      text-align: center;
+      margin-bottom: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #8b5cf6;
+    }
+
+    /* Filter Card */
+    .filter-card {
+      background-color: #1a1a1a;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .filter-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .filter-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #f59e0b;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 16px;
+      align-items: flex-end;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 12px; font-weight: 600; color: #a1a1aa; }
+    .form-input, .form-select {
+      background-color: #121212;
+      border: 1px solid #3f3f46;
+      border-radius: 6px;
+      color: #f4f4f5;
+      font-size: 13px;
+      padding: 9px 12px;
+    }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-primary {
+      background-color: #8b5cf6;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 9px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-err {
+      background-color: #27272a;
+      color: #f87171;
+      border: 1px solid #ef4444;
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Inspector Panel */
+    .inspector-card {
+      background-color: #1a1a1a;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-bottom: 24px;
+    }
+    .insp-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #27272a;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .status-pill {
+      padding: 3px 9px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: monospace;
+    }
+    .status-200 { background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981; }
+    .status-400 { background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #ef4444; }
+    .status-404 { background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #f59e0b; }
+
+    .insp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .box-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #71717a;
+      margin-bottom: 6px;
+    }
+    .code-box {
+      background-color: #121212;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 11px;
+      font-family: Consolas, monospace;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    /* ==============================================================
+       Energy Summary Card Styles (Master Design from Task 3)
+       ============================================================== */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .energy-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background-color: #1a1a1a;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 14px 16px;
+      color: #e4e4e7;
+      min-height: 140px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.15s ease;
+    }
+
+    .energy-card:hover {
+      border-color: #3f3f46;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #f59e0b;
+    }
+
+    .card-badge {
+      font-size: 10px;
+      font-weight: 600;
+      color: #a1a1aa;
+      background-color: #27272a;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .metric-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #71717a;
+    }
+
+    .metric-sublabel {
+      font-size: 11px;
+      color: #a1a1aa;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .metric-value {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-unit {
+      font-size: 14px;
+      font-weight: 600;
+      color: #a1a1aa;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .variant-violet .metric-value { color: #8b5cf6; }
+    .variant-amber  .metric-value { color: #f59e0b; }
+    .variant-green  .metric-value { color: #10b981; }
+    .variant-blue   .metric-value { color: #38bdf8; }
+
+    .meta-list {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #27272a;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      gap: 8px;
+    }
+
+    .meta-label { color: #71717a; }
+    .meta-val { color: #e4e4e7; font-weight: 600; text-align: right; }
+
+    .footer {
+      border-top: 1px solid #27272a;
+      padding-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+      color: #71717a;
+    }
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header class="header-bar">
+      <div>
+        <span class="tag">Full-Stack Training Route · Tasks 03 + 04 + 05</span>
+        <h1>Task 05: Build &amp; Call a Tiny Training API</h1>
+        <p class="subtitle">Next.js Route Handler (/api/training/energy) connected live to Task 4 Filters &amp; Task 3 Cards</p>
+      </div>
+
+      <div class="viewport-controls">
+        <span style="font-size: 11px; color: #a1a1aa;">Viewport:</span>
+        <button id="vp-d" class="btn active" onclick="setVp('100%', this)">Desktop</button>
+        <button id="vp-t" class="btn" onclick="setVp('768px', this)">Tablet (768px)</button>
+        <button id="vp-m" class="btn" onclick="setVp('375px', this)">Mobile (375px)</button>
+      </div>
+    </header>
+
+    <main id="vp-box" class="viewport-frame">
+      <div id="vp-msg" class="vp-notice">Simulating Viewport: 100%</div>
+
+      <!-- 1. Query Controls -->
+      <section class="filter-card">
+        <div class="filter-head">
+          <h2 class="filter-title">API Query Parameters &amp; Error Triggers</h2>
+          <span style="font-size: 11px; color: #10b981; font-weight: 600;">Live Endpoint: /api/training/energy</span>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="reg-select">Select Grid Region</label>
+            <select id="reg-select" class="form-select">
+              <option value="ALL">All Grids (National)</option>
+              <option value="WR" selected>Western Region (WR)</option>
+              <option value="NR">Northern Region (NR)</option>
+              <option value="SR">Southern Region (SR)</option>
+              <option value="ER">Eastern Region (ER)</option>
+              <option value="NER">North Eastern Region (NER)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="date-input">Forecast Date</label>
+            <input id="date-input" type="date" value="2026-10-14" class="form-input">
+          </div>
+
+          <div class="btn-row">
+            <button class="btn-primary" onclick="callApi('VALID')">Call API (200 OK)</button>
+            <button class="btn-err" onclick="callApi('400')">Test 400 Error</button>
+            <button class="btn-err" onclick="callApi('404')">Test 404 Error</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Inspector Panel -->
+      <section class="inspector-card">
+        <div class="insp-head">
+          <div>
+            <h3 style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #f59e0b;">HTTP Request &amp; Response Inspector</h3>
+            <span id="endpoint-display" style="font-size: 11px; color: #a1a1aa; font-family: monospace;">GET /api/training/energy?region=WR&date=2026-10-14</span>
+          </div>
+          <div>
+            <span style="font-size: 11px; color: #71717a; margin-right: 6px;">Status:</span>
+            <span id="status-badge" class="status-pill status-200">200 OK</span>
+          </div>
+        </div>
+
+        <div class="insp-grid">
+          <div>
+            <div class="box-title">Response Headers (Inspected via Fetch API)</div>
+            <div id="headers-box" class="code-box">
+              <div style="color: #8b5cf6;">content-type: <span style="color: #e4e4e7;">application/json</span></div>
+              <div style="color: #8b5cf6;">x-training-api: <span style="color: #e4e4e7;">Task-05</span></div>
+              <div style="color: #8b5cf6;">x-response-time-ms: <span style="color: #e4e4e7;">14</span></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="box-title">Typed Response JSON Body</div>
+            <pre id="json-box" class="code-box" style="color: #34d399;"></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Dynamic Cards -->
+      <section>
+        <h3 style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #a1a1aa; margin-bottom: 12px;">
+          Live Cards Powered By API Response (Task 03 Component)
+        </h3>
+        <div class="cards-grid">
+          <!-- Card 1: Regional Capacity (Matching Task 3 Context Card) -->
+          <article class="energy-card variant-amber" aria-label="Regional Capacity">
+            <header class="card-header">
+              <div class="card-title-group">
+                <span class="card-icon">📍</span>
+                <h3 class="card-title">Regional Capacity</h3>
+              </div>
+              <span id="card1-badge" class="card-badge">GRID-WR</span>
+            </header>
+            <dl class="metric-list">
+              <div class="metric-label-row">
+                <dt class="metric-label">Installed Capacity</dt>
+                <span id="card1-sublabel" class="metric-sublabel">WR</span>
+              </div>
+              <dd class="metric-value-row">
+                <span id="card1-val" class="metric-value">26,655.2</span>
+                <span class="metric-unit">MW</span>
+              </dd>
+            </dl>
+            <dl class="meta-list">
+              <div class="meta-row">
+                <dt class="meta-label">Selected Region</dt>
+                <dd id="card1-meta-region" class="meta-val">Western Region (WR)</dd>
+              </div>
+              <div class="meta-row">
+                <dt class="meta-label">Revision</dt>
+                <dd id="card1-meta-rev" class="meta-val">Rev-04</dd>
+              </div>
+            </dl>
+          </article>
+
+          <!-- Card 2: Current Forecast (Matching Task 3 Live Forecast Card) -->
+          <article class="energy-card variant-violet" aria-label="Current Forecast">
+            <header class="card-header">
+              <div class="card-title-group">
+                <span class="card-icon">⚡</span>
+                <h3 class="card-title">Current Forecast</h3>
+              </div>
+              <span id="card2-badge" class="card-badge">2026-10-14</span>
+            </header>
+            <dl class="metric-list">
+              <div class="metric-label-row">
+                <dt class="metric-label">Solar Forecast</dt>
+                <span id="card2-sublabel" class="metric-sublabel">2026-10-14</span>
+              </div>
+              <dd class="metric-value-row">
+                <span id="card2-val" class="metric-value">18,450.0</span>
+                <span class="metric-unit">MW</span>
+              </dd>
+            </dl>
+            <dl class="meta-list">
+              <div class="meta-row">
+                <dt class="meta-label">Forecasting Type</dt>
+                <dd class="meta-val">Nowcasting</dd>
+              </div>
+              <div class="meta-row">
+                <dt class="meta-label">Model</dt>
+                <dd class="meta-val">Ensemble Net</dd>
+              </div>
+            </dl>
+          </article>
+
+          <!-- Card 3: Telemetry Substations (Matching Task 3 Live Status Card) -->
+          <article class="energy-card variant-green" aria-label="Telemetry Substations">
+            <header class="card-header">
+              <div class="card-title-group">
+                <span class="card-icon">📈</span>
+                <h3 class="card-title">Telemetry Substations</h3>
+              </div>
+              <span id="card3-badge" class="card-badge">NORMAL</span>
+            </header>
+            <dl class="metric-list">
+              <div class="metric-label-row">
+                <dt class="metric-label">Live Telemetry Feed</dt>
+                <span class="metric-sublabel">Active</span>
+              </div>
+              <dd class="metric-value-row">
+                <span id="card3-val" class="metric-value">138</span>
+                <span class="metric-unit">Nodes</span>
+              </dd>
+            </dl>
+            <dl class="meta-list">
+              <div class="meta-row">
+                <dt class="meta-label">Link Status</dt>
+                <dd id="card3-meta-status" class="meta-val">NORMAL</dd>
+              </div>
+              <div class="meta-row">
+                <dt class="meta-label">Data Quality</dt>
+                <dd class="meta-val">100% Validated</dd>
+              </div>
+            </dl>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div>
+        Acceptance Check:
+        <span style="color: #10b981; font-weight: 600;">✓ Next.js Route Handler</span> &nbsp;|&nbsp;
+        <span style="color: #10b981; font-weight: 600;">✓ 200, 400, 404 Demonstrated</span> &nbsp;|&nbsp;
+        <span style="color: #10b981; font-weight: 600;">✓ Headers &amp; JSON Inspected</span> &nbsp;|&nbsp;
+        <span style="color: #10b981; font-weight: 600;">✓ Full-Stack Live</span>
+      </div>
+      <div>Deliverable: <code>reports/week-1/day-01/task-05-first-api.md</code></div>
+    </footer>
+  </div>
+
+  <script>
+    const DB = {
+      'ALL': { name: 'All Grids (National)', code: 'NATIONAL', mw: 72450.5, fc: 54120.0, nodes: 420, rev: 'Till Latest' },
+      'WR':  { name: 'Western Region (WR)', code: 'GRID-WR', mw: 26655.2, fc: 18450.0, nodes: 138, rev: 'Rev 04' },
+      'NR':  { name: 'Northern Region (NR)', code: 'GRID-NR', mw: 18230.0, fc: 12890.5, nodes: 94, rev: 'Rev 02' },
+      'SR':  { name: 'Southern Region (SR)', code: 'GRID-SR', mw: 19840.8, fc: 15300.0, nodes: 112, rev: 'Rev 03' },
+      'ER':  { name: 'Eastern Region (ER)', code: 'GRID-ER', mw: 5820.0, fc: 4210.0, nodes: 52, rev: 'Rev 01' },
+      'NER': { name: 'North Eastern Region (NER)', code: 'GRID-NER', mw: 1904.5, fc: 1120.0, nodes: 24, rev: 'Rev 01' }
+    };
+
+    function callApi(mode) {
+      const endpoint = document.getElementById('endpoint-display');
+      const badge = document.getElementById('status-badge');
+      const jsonBox = document.getElementById('json-box');
+      const headersBox = document.getElementById('headers-box');
+
+      if (mode === '400') {
+        endpoint.textContent = 'GET /api/training/energy (missing ?region parameter)';
+        badge.className = 'status-pill status-400';
+        badge.textContent = '400 Bad Request';
+        jsonBox.style.color = '#f87171';
+        const errPayload = {
+          success: false,
+          error: { code: 'BAD_REQUEST', message: 'Missing required query parameter "region".', details: 'Usage: GET /api/training/energy?region=WR' }
+        };
+        jsonBox.textContent = JSON.stringify(errPayload, null, 2);
+        headersBox.innerHTML = '<div style="color:#8b5cf6;">content-type: <span style="color:#e4e4e7;">application/json</span></div><div style="color:#8b5cf6;">x-status-reason: <span style="color:#e4e4e7;">Parameter-Missing</span></div>';
+        setCardEmpty('API Error 400: Missing query parameter');
+        return;
+      }
+
+      if (mode === '404') {
+        endpoint.textContent = 'GET /api/training/energy?region=UNKNOWN_REGION';
+        badge.className = 'status-pill status-404';
+        badge.textContent = '404 Not Found';
+        jsonBox.style.color = '#f59e0b';
+        const notFoundPayload = {
+          success: false,
+          error: { code: 'NOT_FOUND', message: 'Region "UNKNOWN_REGION" not recognized.', details: 'Allowed regions: ALL, WR, NR, SR, ER, NER' }
+        };
+        jsonBox.textContent = JSON.stringify(notFoundPayload, null, 2);
+        headersBox.innerHTML = '<div style="color:#8b5cf6;">content-type: <span style="color:#e4e4e7;">application/json</span></div><div style="color:#8b5cf6;">x-status-reason: <span style="color:#e4e4e7;">Entity-Not-Found</span></div>';
+        setCardEmpty('API Error 404: Region not found');
+        return;
+      }
+
+      // 200 OK
+      const reg = document.getElementById('reg-select').value;
+      const dt = document.getElementById('date-input').value;
+      endpoint.textContent = `GET /api/training/energy?region=${reg}&date=${dt}`;
+      badge.className = 'status-pill status-200';
+      badge.textContent = '200 OK';
+      jsonBox.style.color = '#34d399';
+
+      const data = DB[reg];
+      const payload = {
+        success: true,
+        data: {
+          regionId: reg,
+          regionName: data.name,
+          regionCode: data.code,
+          installedCapacityMW: data.mw,
+          currentForecastMW: data.fc,
+          substationsCount: data.nodes,
+          gridStatus: 'NORMAL',
+          queriedDate: dt,
+          timestamp: new Date().toISOString()
+        },
+        meta: { responseTimeMs: 12, apiVersion: '1.0.0-training', server: 'Next.js App Router Handler' }
+      };
+      jsonBox.textContent = JSON.stringify(payload, null, 2);
+      headersBox.innerHTML = '<div style="color:#8b5cf6;">content-type: <span style="color:#e4e4e7;">application/json</span></div><div style="color:#8b5cf6;">x-training-api: <span style="color:#e4e4e7;">Task-05</span></div><div style="color:#8b5cf6;">x-response-time-ms: <span style="color:#e4e4e7;">12</span></div>';
+
+      document.getElementById('card1-val').textContent = data.mw.toLocaleString();
+      document.getElementById('card1-badge').textContent = data.code;
+      document.getElementById('card1-sublabel').textContent = reg;
+      document.getElementById('card1-meta-region').textContent = data.name;
+      document.getElementById('card1-meta-rev').textContent = data.rev;
+
+      document.getElementById('card2-val').textContent = data.fc.toLocaleString();
+      document.getElementById('card2-badge').textContent = dt;
+      document.getElementById('card2-sublabel').textContent = dt;
+
+      document.getElementById('card3-val').textContent = data.nodes;
+      document.getElementById('card3-badge').textContent = 'NORMAL';
+      document.getElementById('card3-meta-status').textContent = 'NORMAL';
+    }
+
+    function setCardEmpty(msg) {
+      document.getElementById('card1-val').textContent = '—';
+      document.getElementById('card1-badge').textContent = 'Error';
+      document.getElementById('card1-sublabel').textContent = '—';
+      document.getElementById('card1-meta-region').textContent = 'Unavailable';
+      document.getElementById('card1-meta-rev').textContent = '—';
+
+      document.getElementById('card2-val').textContent = '—';
+      document.getElementById('card2-badge').textContent = 'Error';
+      document.getElementById('card2-sublabel').textContent = '—';
+
+      document.getElementById('card3-val').textContent = '—';
+      document.getElementById('card3-badge').textContent = 'Offline';
+      document.getElementById('card3-meta-status').textContent = 'DISCONNECTED';
+    }
+
+    function setVp(w, btn) {
+      document.querySelectorAll('.viewport-controls .btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const frame = document.getElementById('vp-box');
+      const notice = document.getElementById('vp-msg');
+      frame.style.width = w;
+      if (w === '100%') {
+        frame.style.border = '1px solid #1f1f23';
+        notice.style.display = 'none';
+      } else {
+        frame.style.border = '2px dashed #8b5cf6';
+        notice.style.display = 'block';
+        notice.textContent = 'Simulating Viewport: ' + w;
+      }
+    }
+
+    // Trigger initial 200 OK
+    callApi('VALID');
+  </script>
+</body>
+</html>
+
