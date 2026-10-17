@@ -1,205 +1,195 @@
-# Task 03: Build a Tiny Frontend Card (Energy Summary Card)
+# Task 03: Unified Training Dashboard (Integrated with Task 04 Filters & Task 05 API)
 
 **Module:** 1 — Web, project setup, and first tiny projects  
 **Sprint/Day:** Week 1, Day 01  
-**Status:** Completed  
+**Status:** Completed & Unified  
 **Deliverable:** `reports/week-1/day-01/task-03-summary-card.md`  
 
 ---
 
-## 1. Executive Summary
+## 1. Executive Summary & Unified Architecture
 
-For **Task 03**, a reusable, responsive **Energy Summary Card** component was created for the experimental solar forecasting platform. This component replicates the exact aesthetic, typography, and density of the metric cards found on the live **GI-IITB Experimental Forecast** dashboard (such as the *Upcoming Forecast* time blocks `T, T+1, T+2, T+3` and the *Forecast Context* card).
-
-### Core Constraints & Adherence:
-- **Zero Production Dashboard Alterations:** The live dashboard codebase (`grid-iitb`) was completely untouched. The component was developed and tested within a dedicated, instructor-approved standalone learning environment and training route in `c:\IIT\Tasks\Day 1\Task 3\`.
-- **Props-Driven (No Hard-coding):** All displayed values (`title`, `value`, `unit`, `label`, `sublabel`, `variant`, `metadata`) are dynamically supplied via strongly-typed TypeScript props.
-- **Semantic HTML:** Constructed using `<article>`, `<header>`, `<dl>`, `<dt>`, `<dd>`, and ARIA attributes for accessibility (`aria-busy`, `aria-live`, `role="status"`).
-- **Comprehensive State Management:** Built-in support for **Active**, **Skeleton Loading**, and **Empty / No-Data** states.
-- **Cross-Device Responsiveness:** Verified clean rendering at both mobile viewports (~375px) and desktop viewports (>1024px) with zero console warnings or errors.
+In accordance with instructor and project requirements, **Task 03 (Energy Summary Card Component)** has been updated to become the **single unified training dashboard**. 
+Rather than keeping separate dashboards or tabs for Task 04 and Task 05:
+1. **Task 04 Controlled Filters** (Grid Region dropdown, Forecast Run Date picker, Clear Filters) are integrated directly into the top of the Task 03 dashboard.
+2. **Task 05 Training API & Inspector** (`GET /api/training/energy?region=...&date=...`) runs directly inside Task 03, returning typed JSON responses, HTTP status codes (`200 OK`, `400 Bad Request`, `404 Not Found`), and response headers.
+3. **The API response directly drives the existing Task 03 Energy Summary Cards**, without duplicating cards or creating a second dashboard section.
+4. **All original Task 03 functionality is preserved**: Upcoming Forecast Blocks (T to T+3), Forecast Context / Installed Capacity, Live Solar Power, Solar Radiation (GHI), side-by-side state verification cards, and Desktop / Tablet (768px) / Mobile (375px) viewport simulation controls.
 
 ---
 
-## 2. Component Architecture & File Structure
+## 2. Files Created & Modified
 
-The project has been organized into modular files located in `c:\IIT\Tasks\Day 1\Task 3\`:
-
-```
-c:\IIT\Tasks\Day 1\Task 3\
-├── src\
-│   ├── components\
-│   │   ├── EnergySummaryCard.tsx          # Master shared React component (Used across Tasks 3, 4, 5)
-│   │   ├── EnergySummaryCard.types.ts     # TypeScript interface definitions
-│   │   └── EnergySummaryCard.module.css   # Theme styling & responsive CSS
-│   ├── task-4-filter\                     # Task 04 Filter Feature Module
-│   │   ├── FilterControls.tsx             # Controlled form inputs
-│   │   ├── SelectionResultPanel.tsx       # Live result panel
-│   │   └── Task4View.tsx                  # Task 04 interactive view
-│   ├── task-5-api\                        # Task 05 API Feature Module
-│   │   ├── ApiInspectorPanel.tsx          # HTTP response & JSON inspector
-│   │   ├── apiService.ts                  # API fetch client & mock handlers
-│   │   └── Task5View.tsx                  # Task 05 interactive view
-│   ├── TrainingRoute.tsx                  # Master App with [Task 3] [Task 4] [Task 5] Tab Switcher
-│   ├── main.tsx                           # React entry point
-│   └── vite-env.d.ts                      # CSS modules & Vite types
-├── interactive-demo.html                  # Standalone zero-install interactive tester
-├── reports\week-1\day-01\
-│   └── task-03-summary-card.md            # Formal submission report
-├── package.json                           # Vite + React 19 + TypeScript configuration
-├── tsconfig.json                          # Strict TypeScript configuration
-└── vite.config.ts                         # Vite dev server + /api/training/energy route handler
-```
+| File | Change Description |
+| :--- | :--- |
+| `src/TrainingRoute.tsx` | **Modified:** Converted from 3-tab layout into a **single unified dashboard**. Hosts controlled filters, API test buttons, collapsible network inspector, and cards connected directly to live API state. |
+| `src/task-5-api/types.ts` | **Modified:** Enriched `RegionalEnergyTelemetry` and `ForecastBlockData` to supply regional forecast blocks, actual solar generation, GHI radiation, and metadata. |
+| `vite.config.ts` | **Modified:** Enriched Vite server middleware for `GET /api/training/energy` with multi-region datasets (`ALL`, `WR`, `NR`, `SR`, `ER`, `NER`), status codes (`200`, `400`, `404`), and custom headers (`X-Training-API`, `X-Response-Time-Ms`). |
+| `src/task-5-api/apiService.ts` | **Modified:** Updated client-side API fetch client and fallback database to match the enriched schema. |
+| `src/app/api/training/energy/route.ts` | **Created:** Standard Next.js App Router Route Handler using Web standard `Request` and `Response`, providing zero-dependency route compliance. |
+| `interactive-demo.html` | **Modified:** Standalone zero-install interactive preview updated to the unified architecture with live controlled filters, simulated API status codes, and reactive cards. |
+| `reports/week-1/day-01/task-03-summary-card.md` | **Updated:** Comprehensive training report documenting the unified integration. |
 
 ---
 
-## 3. Strongly-Typed Props Specification
+## 3. Filter Behavior (Task 04 Integration)
 
-The component contract is declared via `EnergySummaryCardProps` in `EnergySummaryCard.types.ts`:
+The filters are placed in a compact, accessible toolbar above the cards:
 
+* **Grid Region (`#grid-region-select`):**
+  - Controlled dropdown supporting all approved training regions:
+    - `WR`: Western Region (Default)
+    - `NR`: Northern Region
+    - `SR`: Southern Region
+    - `ER`: Eastern Region (demonstrates null actuals / empty state)
+    - `NER`: North Eastern Region (demonstrates null GHI sensor / empty state)
+    - `ALL`: All Grids (National View)
+  - Selecting a region immediately updates the React state and triggers an API request for that region.
+* **Forecast Run Date (`#forecast-date-input`):**
+  - Controlled HTML5 `<input type="date">`. Default is `2026-10-14`.
+  - Date changes update the query string and metadata headers across the cards.
+* **Clear Filters Button:**
+  - One-click reset that restores Region to `WR` and Date to `2026-10-14`.
+  - Automatically re-queries the API and re-renders the dashboard consistently.
+* **Stale Request Protection:**
+  - Implemented via a `latestRequestIdRef` tracking reference in `TrainingRoute.tsx`. Slower, out-of-order network responses are discarded if a newer filter selection has already been made.
+
+---
+
+## 4. Training API Endpoint & Response Structure (Task 05 Integration)
+
+### Endpoint Specification:
+```http
+GET /api/training/energy?region={REGION_CODE}&date={YYYY-MM-DD}
+```
+
+### Response Schema Contract:
 ```typescript
-export type CardThemeVariant = 'violet' | 'amber' | 'green' | 'blue';
-
-export interface MetaItem {
-  label: string;
-  value: string | number;
-}
-
-export interface EnergySummaryCardProps {
-  title: string;                                    // Card title (e.g., "Upcoming Forecast")
-  value?: number | string | null;                  // Metric value (e.g., 8250.7)
-  unit?: string;                                   // Metric unit (e.g., "MW", "W/m²")
-  label?: string;                                  // Primary label/block (e.g., "Time Block: T")
-  sublabel?: string;                               // Secondary timestamp/badge (e.g., "08:30")
-  variant?: CardThemeVariant;                      // 'violet' | 'amber' | 'green' | 'blue'
-  icon?: React.ReactNode;                          // Leading icon component
-  isLoading?: boolean;                             // Skeleton loading toggle
-  isEmpty?: boolean;                               // Explicit empty state override
-  emptyMessage?: string;                           // Contextual empty notice
-  metadata?: MetaItem[];                           // Context key-value rows
-  className?: string;                              // Style overrides
-  onClick?: () => void;                            // Optional interactive action
+export interface EnergyApiSuccessResponse {
+  success: true;
+  data: {
+    regionId: string;
+    regionName: string;
+    regionCode: string;
+    installedCapacityMW: number;
+    currentForecastMW: number;
+    forecastBlocks: Array<{
+      label: string;    // 'T', 'T+1', 'T+2', 'T+3'
+      sublabel: string; // '08:30', '08:45', etc.
+      value: number | null;
+      unit: string;
+    }>;
+    actualSolarMW: number | null;
+    solarRadiationGhi: number | null;
+    substationsCount: number;
+    gridStatus: 'NORMAL' | 'ALERT' | 'OFFLINE';
+    revision: string;
+    queriedDate: string;
+    timeRange: string;
+    timestamp: string;
+  };
+  meta: {
+    responseTimeMs: number;
+    apiVersion: string;
+    server: string;
+  };
 }
 ```
 
+### HTTP Status Codes & Error Handling:
+1. **`200 OK`**: Triggered when a recognized region is passed (e.g., `?region=WR`). Returns telemetry data.
+2. **`400 Bad Request`**: Triggered via **"Test 400 Error"** button (omits `region` parameter). Server returns:
+   ```json
+   {
+     "success": false,
+     "error": {
+       "code": "BAD_REQUEST",
+       "message": "Missing required query parameter \"region\".",
+       "details": "Usage: GET /api/training/energy?region=WR&date=2026-10-14"
+     }
+   }
+   ```
+   Renders a clear red validation banner: *"⚠️ 400 Bad Request: Missing required query parameter 'region'."*
+3. **`404 Not Found`**: Triggered via **"Test 404 Error"** button (sends `region=UNKNOWN_REGION`). Server returns:
+   ```json
+   {
+     "success": false,
+     "error": {
+       "code": "NOT_FOUND",
+       "message": "Region \"UNKNOWN_REGION\" not recognized in grid dataset.",
+       "details": "Allowed regions: ALL, WR, NR, SR, ER, NER"
+     }
+   }
+   ```
+   Renders an amber alert banner: *"🔍 404 Not Found: Region not recognized in grid dataset."*
+
 ---
 
-## 4. Semantic HTML Structure
+## 5. Field Mapping from API Response to Existing Task 03 Cards
 
-Rather than relying on unsemantic nested `<div>` tags, the card follows W3C and WCAG semantic markup standards:
+| Existing Task 03 Card | API Response Field | Behavior When Present | Behavior When Missing / Null |
+| :--- | :--- | :--- | :--- |
+| **Upcoming Forecast Blocks (`T, T+1, T+2, T+3`)** | `data.forecastBlocks[i].value` | Renders dynamic MW value in violet tabular typography (e.g. `8,250.7 MW` for WR; `5,420.0 MW` for NR). | Renders fallback dash `—` and message: *"No forecast data available for selected filters"*. |
+| **Forecast Context / Installed Capacity** | `data.installedCapacityMW`, `data.revision`, `data.timeRange`, `data.regionCode` | Amber card displays regional capacity (e.g. `26,655.2 MW` for WR; `72,450.5 MW` for ALL), active revision, and queried date range. | Falls back to default context and empty state if API call fails. |
+| **Live Solar Power** | `data.actualSolarMW` | Green card displays actual generation (e.g. `7,842.3 MW` for WR; `5,120.8 MW` for NR) with `Live IST` badge. | When null (e.g., in `ER` or `NER`), displays fallback dash `—` with `No Feed` badge: *"Telemetry feed unavailable for Eastern Region (ER)"*. |
+| **Solar Radiation (GHI)** | `data.solarRadiationGhi` | Blue card displays GHI in `W/m²` (e.g. `842.5 W/m²` for WR) with `Clear Sky` badge. | When null (e.g., in `ER` or `NER`), displays fallback dash `—` with `No Sensor` badge: *"GHI pyranometer offline in Eastern Region (ER)"*. |
 
-```html
-<article class="energy-card variant-violet" aria-label="Upcoming Forecast Block T">
-  <!-- Semantic Header -->
-  <header class="card-header">
-    <div class="card-title-group">
-      <span class="card-icon" aria-hidden="true">⚡</span>
-      <h3 class="card-title">Upcoming Forecast</h3>
-    </div>
-    <span class="card-badge">08:30</span>
-  </header>
+---
 
-  <!-- Metric Description List -->
-  <dl class="metric-list">
-    <div class="metric-label-row">
-      <dt class="metric-label">Time Block: T</dt>
-      <span class="metric-sublabel">08:30</span>
-    </div>
-    <dd class="metric-value-row">
-      <span class="metric-value">8,250.7</span>
-      <span class="metric-unit">MW</span>
-    </dd>
-  </dl>
+## 6. Verification of States & Responsiveness
 
-  <!-- Optional Context Key-Value Pairs -->
-  <dl class="meta-list">
-    <div class="meta-row">
-      <dt class="meta-label">Installed Capacity:</dt>
-      <dd class="meta-val">26655.2 MW</dd>
-    </div>
-  </dl>
-</article>
+### State Verification:
+- **Loading State:** Tested both via real API fetch latency (`isApiLoading`) and via manual **"Toggle Loading"** button. Renders WCAG-accessible shimmer pulse skeleton cards with `aria-busy="true"` and `aria-live="polite"`.
+- **Empty State:** Tested via manual **"Toggle Empty"** button, when regions have null metrics (`ER`, `NER`), or upon API error. No layout breakage occurs.
+- **Collapsible Network Inspector:** Tested via **"Inspect API ▾"** button. Displays live HTTP request URL, response headers (`Content-Type`, `X-Training-API`, `X-Response-Time-Ms`), and syntax-highlighted formatted JSON without requiring a separate page.
+
+### Viewport Verification:
+- **Desktop (1200px):** 4-column forecast block grid, 3-column context/telemetry grid, horizontal filter toolbar.
+- **Tablet (768px):** Auto-wrapping grid cards, preserved typography, zero horizontal scrollbars.
+- **Mobile (375px):** Single-column stacked cards, full touch-friendly targets, font scales gracefully from 28px to 24px.
+
+---
+
+## 7. Build, Lint & Quality Results
+
+Verification command executed:
+```powershell
+npm run build
 ```
 
----
+Result log:
+```
+> task-03-summary-card@1.0.0 build
+> tsc && vite build
 
-## 5. State Handling Verification
+vite v6.4.4 building for production...
+transforming...
+✓ 33 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.78 kB │ gzip:  0.49 kB
+dist/assets/index-DHL1iKvb.css    3.26 kB │ gzip:  1.15 kB
+dist/assets/index-iWnXW4jw.js   252.42 kB │ gzip: 76.96 kB
+✓ built in 5.77s
+```
 
-| State | Trigger Condition | Visual Appearance & Behavior |
-| :--- | :--- | :--- |
-| **Active State** | `value` provided, `isLoading=false`, `isEmpty=false` | Displays large tabular formatted number (e.g., `8,250.7`), uppercase unit (`MW`), accent color highlight (violet/green/amber/blue), and optional metadata rows. |
-| **Loading State** | `isLoading=true` | Replaces metric text with an animated linear-gradient shimmer skeleton (`@keyframes shimmer`). Sets `aria-busy="true"` and `aria-live="polite"` for screen readers. |
-| **Empty State** | `value === null` or `isEmpty=true` | Renders a clean muted dash (`—`) and a helpful fallback message (e.g., *"No data available for the selected period"*), preventing layout breakage or runtime errors. |
-
----
-
-## 6. Styling & Responsiveness
-
-### Color Tokens (Dashboard Match):
-- **Card Background:** `#1a1a1a` (Zinc 900)
-- **Border:** `#27272a` (Zinc 800) with hover state to `#3f3f46`
-- **Primary Text:** `#e4e4e7` (Zinc 200)
-- **Muted Labels:** `#71717a` (Zinc 500)
-- **Metric Highlight Colors:**
-  - Violet (`#8b5cf6`): Used for forecast blocks (`T, T+1, T+2, T+3`)
-  - Green (`#10b981`): Used for live actual generation
-  - Amber (`#f59e0b`): Used for forecast context and solar warnings
-  - Blue (`#38bdf8`): Used for solar radiation (GHI)
-
-### Responsive Breakpoints:
-- **Desktop (>1024px):** Renders in an auto-fitting grid layout (`grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))`).
-- **Tablet (768px):** Adapts fluidly without horizontal scroll, stacking context metadata cleanly.
-- **Mobile (<640px / 375px):** Card scales padding to `12px`, value font scales from `28px` to `24px`, and layout stacks into a single column with full touch-friendly proportions.
+* **TypeScript Compilation:** Passed with 0 errors.
+* **Console Warnings/Errors:** 0 warnings, 0 errors.
+* **Production Integrity:** The live portal repository (`grid-iitb`) was completely untouched.
 
 ---
 
-## 7. Quality & Acceptance Checklist
+## 8. How to Test & Review
 
-| Acceptance Requirement | Status | Notes |
-| :--- | :---: | :--- |
-| **Values come from props, not hardcoded** | **Passed** | Verified in `EnergySummaryCard.tsx` — all text and numbers rendered from props. |
-| **Loading state implemented** | **Passed** | CSS shimmer skeleton implemented with accessibility attributes. |
-| **Empty/Fallback state implemented** | **Passed** | Fallback dash and descriptive message for missing values. |
-| **Semantic HTML used** | **Passed** | `<article>`, `<header>`, `<h3>`, `<dl>`, `<dt>`, `<dd>`. |
-| **Zero console errors** | **Passed** | Validated in training harness with 0 warnings/errors. |
-| **Mobile & desktop responsiveness** | **Passed** | Tested across 375px, 768px, and 1200px viewports. |
-| **Production dashboard unaltered** | **Passed** | Built in an isolated learning project under `Tasks/Day 1/Task 3`. |
-
----
-
-## 8. How to View & Test the Implementation
-
-### Option A: Instant Zero-Install Browser Preview
-Double-click or open the following file directly in any web browser (Google Chrome, Microsoft Edge, etc.):
+### Option A: Interactive Zero-Install Browser Preview
+Open directly in any browser:
 ```
 c:\IIT\Tasks\Day 1\Task 3\interactive-demo.html
 ```
-- Includes live interactive buttons to toggle **Loading State ON/OFF**, **Empty State ON/OFF**, and instant viewport simulation (**Desktop**, **Tablet 768px**, **Mobile 375px**).
 
-### Option B: Local React Development Server
-In PowerShell or Terminal:
+### Option B: Local React 19 Development Server
 ```powershell
 cd "c:\IIT\Tasks\Day 1\Task 3"
-npm install
 npm run dev
 ```
-Navigate to `http://localhost:3000` to view the full React 19 + TypeScript Training Route.
-
----
-
-## 9. Visual Artifacts & Screenshots (`image&video/`)
-
-All visual evidence and screenshots are stored in the project's [`image&video/`](./image&video/) folder:
-
-1. **Desktop View (All Cards Active):**
-   - File: `image&video/01-desktop-summary-cards.png`
-   - Shows: Upcoming Forecast blocks (T, T+1, T+2, T+3), Forecast Context, Live Actuals, and Solar Radiation cards rendered in multi-column layout.
-
-2. **Mobile View (Narrow Screen Usability - 375px):**
-   - File: `image&video/02-mobile-responsive-view.png`
-   - Shows: Fluid single-column stacked layout without horizontal scrollbars or layout shifts.
-
-3. **Loading Skeleton State:**
-   - File: `image&video/03-loading-skeleton-shimmer.png`
-   - Shows: Pulse animated shimmer placeholders for the metric titles, badges, and values.
-
-
+Open `http://localhost:3000` to interact with the unified dashboard.

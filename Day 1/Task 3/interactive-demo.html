@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GI-IITB - Training Route: Energy Summary Card (Standalone Interactive Preview)</title>
+  <title>GI-IITB - Unified Training Dashboard (Task 03 + 04 + 05)</title>
   <style>
     /* Reset & Base Variables */
     *, *::before, *::after {
@@ -20,7 +20,6 @@
       padding: 24px;
     }
 
-    /* Container */
     .container {
       max-width: 1200px;
       margin: 0 auto;
@@ -48,7 +47,7 @@
 
     .header-title-group h1 {
       font-size: 22px;
-      font-weight: 700;
+      font-weight: 800;
       color: #ffffff;
       margin-top: 4px;
     }
@@ -131,6 +130,80 @@
       color: #8b5cf6;
     }
 
+    /* Filters Section */
+    .filter-panel {
+      background-color: #1a1a1a;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+    }
+
+    .filter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .filter-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #f59e0b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .active-badge {
+      font-size: 10px;
+      font-weight: 600;
+      color: #10b981;
+      background-color: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    .filter-row {
+      display: flex;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1 1 180px;
+    }
+
+    .form-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #a1a1aa;
+    }
+
+    .select-input, .date-input {
+      background-color: #121212;
+      border: 1px solid #3f3f46;
+      border-radius: 6px;
+      color: #f4f4f5;
+      font-size: 12px;
+      padding: 7px 10px;
+      width: 100%;
+      outline: none;
+    }
+
+    .select-input:focus, .date-input:focus {
+      border-color: #8b5cf6;
+    }
+
     /* Section Headings */
     .section-title {
       font-size: 12px;
@@ -140,8 +213,8 @@
       color: #a1a1aa;
       margin-bottom: 12px;
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 6px;
     }
 
     /* Grids */
@@ -165,9 +238,7 @@
       gap: 12px;
     }
 
-    /* ==============================================================
-       Energy Summary Card Styles (Semantic & Reusable)
-       ============================================================== */
+    /* Energy Summary Card Styles */
     .energy-card {
       display: flex;
       flex-direction: column;
@@ -187,7 +258,6 @@
       border-color: #3f3f46;
     }
 
-    /* Card Header */
     .card-header {
       display: flex;
       align-items: center;
@@ -227,7 +297,6 @@
       letter-spacing: 0.05em;
     }
 
-    /* Metric DL list */
     .metric-list {
       display: flex;
       flex-direction: column;
@@ -278,13 +347,11 @@
       letter-spacing: 0.02em;
     }
 
-    /* Color Variants */
     .variant-violet .metric-value { color: #8b5cf6; }
     .variant-amber  .metric-value { color: #f59e0b; }
     .variant-green  .metric-value { color: #10b981; }
     .variant-blue   .metric-value { color: #38bdf8; }
 
-    /* Metadata Rows */
     .meta-list {
       margin-top: 10px;
       padding-top: 8px;
@@ -305,7 +372,6 @@
     .meta-label { color: #71717a; }
     .meta-val { color: #e4e4e7; font-weight: 600; text-align: right; }
 
-    /* Empty State */
     .empty-state {
       display: flex;
       flex-direction: column;
@@ -326,7 +392,6 @@
       color: #71717a;
     }
 
-    /* Loading Shimmer Skeleton */
     .skeleton-block {
       background: linear-gradient(90deg, #27272a 25%, #3f3f46 50%, #27272a 75%);
       background-size: 200% 100%;
@@ -343,24 +408,41 @@
     .sk-badge { width: 40px; height: 14px; }
     .sk-label { width: 60px; height: 10px; margin-bottom: 8px; }
     .sk-value { width: 140px; height: 28px; margin-bottom: 6px; }
-    .sk-meta  { width: 100%; height: 12px; margin-top: 8px; }
 
-    /* Footer Checklist */
-    .footer-checklist {
+    /* Inspector styles */
+    .inspector-box {
+      margin-top: 14px;
+      padding-top: 14px;
       border-top: 1px solid #27272a;
-      padding-top: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      font-size: 12px;
-      color: #71717a;
+      display: none;
     }
 
-    .status-badge {
-      color: #10b981;
-      font-weight: 600;
+    .inspector-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .code-box {
+      background-color: #121212;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-family: Consolas, monospace;
+      font-size: 11px;
+      max-height: 140px;
+      overflow-y: auto;
+      line-height: 1.5;
+    }
+
+    .alert-banner {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
     }
 
     @media (max-width: 640px) {
@@ -374,6 +456,12 @@
       .metric-unit {
         font-size: 12px;
       }
+      .filter-row {
+        flex-direction: column;
+      }
+      .form-group {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -383,12 +471,12 @@
     <!-- Header -->
     <header class="header-bar">
       <div class="header-title-group">
-        <span class="tag">Instructor Training Route & Sandbox</span>
+        <span class="tag">GI-IITB Unified Training Workspace (Day 1)</span>
         <h1>Task 03: Energy Summary Card Component</h1>
-        <p>Interactive testing harness · Isolated learning component · Production dashboard untouched</p>
+        <p>Unified Training Dashboard · Controlled Filters (Task 04) · Live Training API &amp; Inspector (Task 05)</p>
       </div>
 
-      <!-- Live Controls -->
+      <!-- Controls Panel -->
       <div class="controls-panel">
         <span>Test States:</span>
         <button id="btn-toggle-loading" class="btn" onclick="toggleLoading()">Toggle Loading</button>
@@ -401,15 +489,102 @@
       </div>
     </header>
 
-    <!-- Simulation Viewport -->
+    <!-- Main Viewport Box -->
     <main id="viewport-box" class="viewport-frame">
       <div id="viewport-notice" class="viewport-indicator">Simulating Viewport: 100%</div>
 
+      <!-- COMPACT FILTERS & API TEST TOOLBAR (Task 04 + Task 05) -->
+      <section class="filter-panel">
+        <div class="filter-header">
+          <div class="filter-title">
+            <span>Grid &amp; Forecast Filters</span>
+            <span class="active-badge">Controlled Inputs Active</span>
+          </div>
+
+          <div id="api-status-pill" style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 11px; color: #71717a;">API:</span>
+            <span id="status-code-badge" style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; background: rgba(16,185,129,0.15); border: 1px solid #10b981; color: #34d399; font-family: monospace;">
+              200 OK
+            </span>
+            <span id="latency-badge" style="font-size: 11px; color: #71717a;">(12ms)</span>
+          </div>
+        </div>
+
+        <div class="filter-row">
+          <!-- Region Select -->
+          <div class="form-group">
+            <label class="form-label" for="region-select">Grid Region <span style="color:#ef4444;">*</span></label>
+            <select id="region-select" class="select-input" onchange="onRegionChange(this.value)">
+              <option value="WR" selected>Western Region (WR)</option>
+              <option value="NR">Northern Region (NR)</option>
+              <option value="SR">Southern Region (SR)</option>
+              <option value="ER">Eastern Region (ER)</option>
+              <option value="NER">North Eastern Region (NER)</option>
+              <option value="ALL">All Grids (National View)</option>
+            </select>
+          </div>
+
+          <!-- Date Input -->
+          <div class="form-group">
+            <label class="form-label" for="date-input">Forecast Run Date <span style="color:#ef4444;">*</span></label>
+            <input id="date-input" type="date" class="date-input" value="2026-10-14" onchange="onDateChange(this.value)">
+          </div>
+
+          <!-- Clear Filters Button -->
+          <button type="button" class="btn" style="height: 35px;" onclick="clearFilters()">Clear Filters</button>
+
+          <!-- Divider -->
+          <div style="height: 24px; width: 1px; background: #3f3f46; margin: 0 4px; align-self: center;"></div>
+
+          <!-- API Test Actions -->
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn active-purple" style="height: 35px;" onclick="callApi()">⟳ Call API</button>
+            <button type="button" class="btn" style="height: 35px; border-color: #ef4444; color: #ef4444;" onclick="trigger400()">Test 400 Error</button>
+            <button type="button" class="btn" style="height: 35px; border-color: #f59e0b; color: #f59e0b;" onclick="trigger404()">Test 404 Error</button>
+            <button type="button" id="btn-inspector" class="btn" style="height: 35px;" onclick="toggleInspector()">Inspect API ▾</button>
+          </div>
+        </div>
+
+        <!-- Collapsible Inspector Box -->
+        <div id="inspector-panel" class="inspector-box">
+          <div style="font-family: Consolas, monospace; font-size: 11px; color: #e4e4e7; background: #121212; padding: 8px 12px; border-radius: 4px; border: 1px solid #27272a; margin-bottom: 12px; display: flex; justify-content: space-between;">
+            <div><span style="color: #8b5cf6; font-weight: 700;">GET</span> <span id="insp-url">/api/training/energy?region=WR&date=2026-10-14</span></div>
+            <span style="color: #71717a;">Next.js Route Handler / Vite Middleware</span>
+          </div>
+
+          <div class="inspector-grid">
+            <div>
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #71717a; margin-bottom: 4px;">Response Headers</div>
+              <div id="insp-headers" class="code-box">
+                <div><span style="color: #8b5cf6;">content-type:</span> application/json</div>
+                <div><span style="color: #8b5cf6;">x-training-api:</span> Task-05</div>
+                <div><span style="color: #8b5cf6;">x-response-time-ms:</span> 12</div>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #71717a; margin-bottom: 4px;">Response JSON Body</div>
+              <pre id="insp-json" class="code-box" style="color: #34d399;"></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alert Error Banner -->
+        <div id="alert-banner" class="alert-banner">
+          <div>
+            <strong id="alert-title" style="font-size: 12px;">⚠️ 400 Bad Request:</strong>
+            <span id="alert-msg" style="font-size: 12px; color: #e4e4e7;">Missing required query parameter "region".</span>
+          </div>
+          <button type="button" class="btn" onclick="clearFilters()" style="padding: 4px 10px; font-size: 11px;">Reset to Valid Region</button>
+        </div>
+      </section>
+
       <!-- SECTION 1: UPCOMING FORECAST -->
       <section>
-        <h2 class="section-title">
-          1. Upcoming Forecast Block Cards (Matched to Dashboard Image)
-        </h2>
+        <div class="section-title">
+          <span>1. Upcoming Forecast Block Cards (Matched to Dashboard Image)</span>
+          <span id="active-region-label" style="font-size: 11px; color: #8b5cf6; text-transform: none; font-weight: 600;">● Active Region: Western Region (WR)</span>
+        </div>
+
         <div id="forecast-grid" class="grid-blocks">
           <!-- Card T -->
           <article class="energy-card variant-violet" aria-label="Upcoming Forecast Block T">
@@ -426,7 +601,7 @@
                 <span class="metric-sublabel">08:30</span>
               </div>
               <dd class="metric-value-row">
-                <span class="metric-value card-val" data-orig="8250.7">8250.7</span>
+                <span id="val-t" class="metric-value">8,250.7</span>
                 <span class="metric-unit">MW</span>
               </dd>
             </dl>
@@ -447,7 +622,7 @@
                 <span class="metric-sublabel">08:45</span>
               </div>
               <dd class="metric-value-row">
-                <span class="metric-value card-val" data-orig="9389.0">9389.0</span>
+                <span id="val-t1" class="metric-value">9,389.0</span>
                 <span class="metric-unit">MW</span>
               </dd>
             </dl>
@@ -468,7 +643,7 @@
                 <span class="metric-sublabel">09:00</span>
               </div>
               <dd class="metric-value-row">
-                <span class="metric-value card-val" data-orig="10791.5">10791.5</span>
+                <span id="val-t2" class="metric-value">10,791.5</span>
                 <span class="metric-unit">MW</span>
               </dd>
             </dl>
@@ -489,7 +664,7 @@
                 <span class="metric-sublabel">09:15</span>
               </div>
               <dd class="metric-value-row">
-                <span class="metric-value card-val" data-orig="11694.1">11694.1</span>
+                <span id="val-t3" class="metric-value">11,694.1</span>
                 <span class="metric-unit">MW</span>
               </dd>
             </dl>
@@ -499,9 +674,10 @@
 
       <!-- SECTION 2: CONTEXT & LIVE METRICS -->
       <section>
-        <h2 class="section-title">
-          2. High-Density Context & Live Metrics
-        </h2>
+        <div class="section-title">
+          <span>2. High-Density Context &amp; Live Telemetry</span>
+        </div>
+
         <div class="grid-context">
           <!-- Forecast Context Card -->
           <article class="energy-card variant-amber" aria-label="Forecast Context">
@@ -510,21 +686,21 @@
                 <span class="card-icon">📍</span>
                 <h3 class="card-title">Forecast Context</h3>
               </div>
-              <span class="card-badge">ISTS</span>
+              <span id="badge-context" class="card-badge">GRID-WR</span>
             </header>
             <dl class="metric-list">
               <div class="metric-label-row">
                 <dt class="metric-label">Installed Capacity</dt>
               </div>
               <dd class="metric-value-row">
-                <span class="metric-value card-val" data-orig="26655.2">26655.2</span>
+                <span id="val-capacity" class="metric-value">26,655.2</span>
                 <span class="metric-unit">MW</span>
               </dd>
             </dl>
             <dl class="meta-list">
               <div class="meta-row"><dt class="meta-label">Forecasting Type:</dt><dd class="meta-val">Nowcasting</dd></div>
-              <div class="meta-row"><dt class="meta-label">Revision:</dt><dd class="meta-val">Till Latest</dd></div>
-              <div class="meta-row"><dt class="meta-label">Time Range:</dt><dd class="meta-val">Oct 14, 00:00 → 23:45</dd></div>
+              <div class="meta-row"><dt class="meta-label">Revision:</dt><dd id="meta-rev" class="meta-val">Rev 04</dd></div>
+              <div class="meta-row"><dt class="meta-label">Time Range:</dt><dd id="meta-timerange" class="meta-val">2026-10-14, 00:00 → 23:45</dd></div>
             </dl>
           </article>
 
@@ -535,17 +711,25 @@
                 <span class="card-icon">📈</span>
                 <h3 class="card-title">Live Solar Power</h3>
               </div>
-              <span class="card-badge">Live IST</span>
+              <span id="badge-solar" class="card-badge">Live IST</span>
             </header>
-            <dl class="metric-list">
+            <dl id="solar-metric-box" class="metric-list">
               <div class="metric-label-row">
                 <dt class="metric-label">Actual Grid Reading</dt>
                 <span class="metric-sublabel">08:15 IST</span>
               </div>
               <dd class="metric-value-row">
-                <span class="metric-value card-val" data-orig="7842.3">7842.3</span>
+                <span id="val-solar" class="metric-value">7,842.3</span>
                 <span class="metric-unit">MW</span>
               </dd>
+            </dl>
+            <div id="solar-empty-box" class="empty-state" style="display:none;">
+              <span class="empty-dash">—</span>
+              <p id="solar-empty-msg" class="empty-desc">No live telemetry recorded</p>
+            </div>
+            <dl class="meta-list">
+              <div class="meta-row"><dt class="meta-label">Telemetry Latency:</dt><dd class="meta-val">&lt; 240ms</dd></div>
+              <div class="meta-row"><dt class="meta-label">Data Quality:</dt><dd id="solar-quality" class="meta-val">100% Validated</dd></div>
             </dl>
           </article>
 
@@ -556,17 +740,25 @@
                 <span class="card-icon">☀️</span>
                 <h3 class="card-title">Solar Radiation (GHI)</h3>
               </div>
-              <span class="card-badge">Clear Sky</span>
+              <span id="badge-ghi" class="card-badge">Clear Sky</span>
             </header>
-            <dl class="metric-list">
+            <dl id="ghi-metric-box" class="metric-list">
               <div class="metric-label-row">
                 <dt class="metric-label">Peak Estimated</dt>
                 <span class="metric-sublabel">12:30 IST</span>
               </div>
               <dd class="metric-value-row">
-                <span class="metric-value card-val" data-orig="842.5">842.5</span>
+                <span id="val-ghi" class="metric-value">842.5</span>
                 <span class="metric-unit">W/m²</span>
               </dd>
+            </dl>
+            <div id="ghi-empty-box" class="empty-state" style="display:none;">
+              <span class="empty-dash">—</span>
+              <p id="ghi-empty-msg" class="empty-desc">No radiation reading</p>
+            </div>
+            <dl class="meta-list">
+              <div class="meta-row"><dt class="meta-label">Pyranometer Status:</dt><dd id="ghi-status" class="meta-val">Calibrated</dd></div>
+              <div class="meta-row"><dt class="meta-label">Forecast Model:</dt><dd class="meta-val">ECMWF IFS HighRes</dd></div>
             </dl>
           </article>
         </div>
@@ -574,11 +766,10 @@
 
       <!-- SECTION 3: STATE COMPARISON -->
       <section>
-        <h2 class="section-title">
-          3. Side-by-Side State Verification (Active / Loading / Empty)
-        </h2>
+        <div class="section-title">
+          <span>3. Side-by-Side State Verification (Active / Loading / Empty)</span>
+        </div>
         <div class="grid-states">
-          <!-- Active Card -->
           <article class="energy-card variant-violet" aria-label="Active State Demo">
             <header class="card-header">
               <div class="card-title-group">
@@ -593,13 +784,12 @@
                 <span class="metric-sublabel">Active</span>
               </div>
               <dd class="metric-value-row">
-                <span class="metric-value">12450.0</span>
+                <span class="metric-value">12,450.0</span>
                 <span class="metric-unit">MW</span>
               </dd>
             </dl>
           </article>
 
-          <!-- Skeleton Loading Card -->
           <article class="energy-card" aria-busy="true" aria-live="polite" aria-label="Loading State Demo">
             <header class="card-header">
               <div class="skeleton-block sk-title"></div>
@@ -611,7 +801,6 @@
             </div>
           </article>
 
-          <!-- Empty Fallback Card -->
           <article class="energy-card" aria-label="Empty State Demo">
             <header class="card-header">
               <div class="card-title-group">
@@ -629,15 +818,183 @@
       </section>
     </main>
 
-    <!-- Footer Checklist -->
-    <footer class="footer-checklist">
-     
+    <!-- Footer -->
+    <footer style="max-width: 1200px; margin: 36px auto 0 auto; border-top: 1px solid #27272a; padding-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 12px; color: #71717a;">
+      <div>
+        Unified Architecture: <span style="color: #10b981; font-weight: 600;">✓ Task 03 (Cards)</span> · 
+        <span style="color: #10b981; font-weight: 600;">✓ Task 04 (Controlled Filters)</span> · 
+        <span style="color: #10b981; font-weight: 600;">✓ Task 05 (Live API &amp; Inspector)</span>
+      </div>
+      <div>Deliverable Report: <code>reports/week-1/day-01/task-03-summary-card.md</code></div>
     </footer>
   </div>
 
   <script>
+    const MOCK_DB = {
+      ALL: { name: 'All Grids (National View)', code: 'NATIONAL', mw: 72450.5, fc: 54120.0, rev: 'Till Latest', t: [22460.7, 25799.0, 29286.5, 31784.1], solar: 21340.0, ghi: 825.0 },
+      NR:  { name: 'Northern Region (NR)',      code: 'GRID-NR',  mw: 18230.0, fc: 12890.5, rev: 'Rev 02',       t: [5420.0, 6180.2, 7095.0, 7710.4],     solar: 5120.8,  ghi: 795.0 },
+      WR:  { name: 'Western Region (WR)',       code: 'GRID-WR',  mw: 26655.2, fc: 18450.0, rev: 'Rev 04',       t: [8250.7, 9389.0, 10791.5, 11694.1],   solar: 7842.3,  ghi: 842.5 },
+      SR:  { name: 'Southern Region (SR)',      code: 'GRID-SR',  mw: 19840.8, fc: 15300.0, rev: 'Rev 03',       t: [6890.0, 7640.5, 8450.0, 9120.0],     solar: 6650.0,  ghi: 810.0 },
+      ER:  { name: 'Eastern Region (ER)',       code: 'GRID-ER',  mw: 5820.0,  fc: 4210.0,  rev: 'Rev 01',       t: [1820.0, 2050.0, 2340.0, 2580.0],     solar: null,    ghi: null },
+      NER: { name: 'North Eastern Region (NER)',code: 'GRID-NER', mw: 1904.5,  fc: 1120.0,  rev: 'Rev 01',       t: [480.0, 540.0, 610.0, 680.0],         solar: null,    ghi: null },
+    };
+
+    let curRegion = 'WR';
+    let curDate = '2026-10-14';
     let isLoading = false;
     let isEmpty = false;
+    let inspectorOpen = false;
+
+    function applyApiData(region, date, status, errorObj) {
+      const statusBadge = document.getElementById('status-code-badge');
+      const latencyBadge = document.getElementById('latency-badge');
+      const inspUrl = document.getElementById('insp-url');
+      const inspJson = document.getElementById('insp-json');
+      const alertBanner = document.getElementById('alert-banner');
+      const alertTitle = document.getElementById('alert-title');
+      const alertMsg = document.getElementById('alert-msg');
+
+      inspUrl.textContent = '/api/training/energy' + (region ? '?region=' + region + '&date=' + date : '');
+
+      if (status === 200) {
+        const data = MOCK_DB[region];
+        statusBadge.textContent = '200 OK';
+        statusBadge.style.background = 'rgba(16,185,129,0.15)';
+        statusBadge.style.borderColor = '#10b981';
+        statusBadge.style.color = '#34d399';
+        alertBanner.style.display = 'none';
+
+        const payload = {
+          success: true,
+          data: {
+            regionId: region,
+            regionName: data.name,
+            regionCode: data.code,
+            installedCapacityMW: data.mw,
+            currentForecastMW: data.fc,
+            forecastBlocks: [
+              { label: 'T', sublabel: '08:30', value: data.t[0], unit: 'MW' },
+              { label: 'T+1', sublabel: '08:45', value: data.t[1], unit: 'MW' },
+              { label: 'T+2', sublabel: '09:00', value: data.t[2], unit: 'MW' },
+              { label: 'T+3', sublabel: '09:15', value: data.t[3], unit: 'MW' }
+            ],
+            actualSolarMW: data.solar,
+            solarRadiationGhi: data.ghi,
+            revision: data.rev,
+            queriedDate: date,
+            timeRange: date + ', 00:00 → ' + date + ', 23:45'
+          },
+          meta: { responseTimeMs: 12, apiVersion: '1.0.0-training', server: 'Training Route Handler' }
+        };
+        inspJson.textContent = JSON.stringify(payload, null, 2);
+        inspJson.style.color = '#34d399';
+
+        // Update UI Cards
+        document.getElementById('active-region-label').textContent = '● Active Region: ' + data.name + ' (' + date + ')';
+        document.getElementById('val-t').textContent = data.t[0].toLocaleString(undefined, {minimumFractionDigits: 1});
+        document.getElementById('val-t1').textContent = data.t[1].toLocaleString(undefined, {minimumFractionDigits: 1});
+        document.getElementById('val-t2').textContent = data.t[2].toLocaleString(undefined, {minimumFractionDigits: 1});
+        document.getElementById('val-t3').textContent = data.t[3].toLocaleString(undefined, {minimumFractionDigits: 1});
+
+        document.getElementById('val-capacity').textContent = data.mw.toLocaleString(undefined, {minimumFractionDigits: 1});
+        document.getElementById('badge-context').textContent = data.code;
+        document.getElementById('meta-rev').textContent = data.rev;
+        document.getElementById('meta-timerange').textContent = date + ', 00:00 → 23:45';
+
+        // Actual solar
+        if (data.solar !== null) {
+          document.getElementById('solar-metric-box').style.display = 'flex';
+          document.getElementById('solar-empty-box').style.display = 'none';
+          document.getElementById('val-solar').textContent = data.solar.toLocaleString(undefined, {minimumFractionDigits: 1});
+          document.getElementById('badge-solar').textContent = 'Live IST';
+          document.getElementById('solar-quality').textContent = '100% Validated';
+        } else {
+          document.getElementById('solar-metric-box').style.display = 'none';
+          document.getElementById('solar-empty-box').style.display = 'flex';
+          document.getElementById('solar-empty-msg').textContent = 'Telemetry feed unavailable for ' + data.name;
+          document.getElementById('badge-solar').textContent = 'No Feed';
+          document.getElementById('solar-quality').textContent = 'Offline';
+        }
+
+        // GHI
+        if (data.ghi !== null) {
+          document.getElementById('ghi-metric-box').style.display = 'flex';
+          document.getElementById('ghi-empty-box').style.display = 'none';
+          document.getElementById('val-ghi').textContent = data.ghi.toLocaleString(undefined, {minimumFractionDigits: 1});
+          document.getElementById('badge-ghi').textContent = 'Clear Sky';
+          document.getElementById('ghi-status').textContent = 'Calibrated';
+        } else {
+          document.getElementById('ghi-metric-box').style.display = 'none';
+          document.getElementById('ghi-empty-box').style.display = 'flex';
+          document.getElementById('ghi-empty-msg').textContent = 'GHI pyranometer offline in ' + data.name;
+          document.getElementById('badge-ghi').textContent = 'No Sensor';
+          document.getElementById('ghi-status').textContent = 'Offline';
+        }
+      } else {
+        // Error state
+        statusBadge.textContent = status === 400 ? '400 Bad Request' : '404 Not Found';
+        statusBadge.style.background = status === 400 ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)';
+        statusBadge.style.borderColor = status === 400 ? '#ef4444' : '#f59e0b';
+        statusBadge.style.color = status === 400 ? '#f87171' : '#fbbf24';
+
+        alertBanner.style.display = 'flex';
+        alertBanner.style.background = status === 400 ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)';
+        alertBanner.style.borderColor = status === 400 ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)';
+        alertTitle.style.color = status === 400 ? '#ef4444' : '#f59e0b';
+        alertTitle.textContent = status === 400 ? '⚠️ 400 Bad Request:' : '🔍 404 Not Found:';
+        alertMsg.textContent = errorObj.message;
+
+        const errPayload = { success: false, error: errorObj };
+        inspJson.textContent = JSON.stringify(errPayload, null, 2);
+        inspJson.style.color = status === 400 ? '#f87171' : '#fbbf24';
+      }
+    }
+
+    function onRegionChange(val) {
+      curRegion = val;
+      callApi();
+    }
+
+    function onDateChange(val) {
+      curDate = val;
+      callApi();
+    }
+
+    function callApi() {
+      applyApiData(curRegion, curDate, 200);
+    }
+
+    function clearFilters() {
+      curRegion = 'WR';
+      curDate = '2026-10-14';
+      document.getElementById('region-select').value = 'WR';
+      document.getElementById('date-input').value = '2026-10-14';
+      callApi();
+    }
+
+    function trigger400() {
+      applyApiData('', curDate, 400, {
+        code: 'BAD_REQUEST',
+        message: 'Missing required query parameter "region".',
+        details: 'Usage: GET /api/training/energy?region=WR&date=' + curDate
+      });
+    }
+
+    function trigger404() {
+      applyApiData('UNKNOWN', curDate, 404, {
+        code: 'NOT_FOUND',
+        message: 'Region "UNKNOWN" not recognized in grid dataset.',
+        details: 'Allowed regions: ALL, WR, NR, SR, ER, NER'
+      });
+    }
+
+    function toggleInspector() {
+      inspectorOpen = !inspectorOpen;
+      const p = document.getElementById('inspector-panel');
+      const b = document.getElementById('btn-inspector');
+      p.style.display = inspectorOpen ? 'block' : 'none';
+      b.textContent = inspectorOpen ? 'Hide Inspector ▴' : 'Inspect API ▾';
+    }
 
     function toggleLoading() {
       isLoading = !isLoading;
@@ -668,7 +1025,7 @@
     function applyStates() {
       const cards = document.querySelectorAll('#forecast-grid .energy-card, .grid-context .energy-card');
       cards.forEach(card => {
-        const valElem = card.querySelector('.card-val');
+        const valElem = card.querySelector('.metric-value');
         const metricList = card.querySelector('.metric-list');
         const existingEmpty = card.querySelector('.dynamic-empty');
         const existingSkeleton = card.querySelector('.dynamic-skeleton');
@@ -721,8 +1078,9 @@
       }
     }
 
-    console.log('[Training Route] EnergySummaryCard mounted with 0 errors.');
+    // Initialize with default WR
+    callApi();
+    console.log('[Training Route] Unified Dashboard mounted with Task 03 + 04 + 05.');
   </script>
 </body>
 </html>
-

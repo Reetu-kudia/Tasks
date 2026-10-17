@@ -1,13 +1,24 @@
+export interface ForecastBlockData {
+  label: string;
+  sublabel: string;
+  value: number | null;
+  unit: string;
+}
+
 export interface RegionalEnergyTelemetry {
   regionId: string;
   regionName: string;
   regionCode: string;
   installedCapacityMW: number;
   currentForecastMW: number;
+  forecastBlocks: ForecastBlockData[];
+  actualSolarMW: number | null;
+  solarRadiationGhi: number | null;
   substationsCount: number;
   gridStatus: 'NORMAL' | 'ALERT' | 'OFFLINE';
   revision: string;
   queriedDate: string;
+  timeRange: string;
   timestamp: string;
 }
 
