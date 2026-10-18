@@ -22,6 +22,7 @@ export interface RegionalEnergyTelemetry {
   timestamp: string;
 }
 
+
 export interface EnergyApiSuccessResponse {
   success: true;
   data: RegionalEnergyTelemetry;
