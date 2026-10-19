@@ -100,3 +100,4 @@ if (caller.role !== "super_admin") {
 3. **Structured Response Contracts:** All responses follow standardized envelope structures:
    - Success: `{ "data": ... }` or `{ "ok": true }`
    - Failure: `{ "error": "Descriptive message" }` with standard HTTP error codes (`400`, `401`, `403`, `404`, `500`).
+

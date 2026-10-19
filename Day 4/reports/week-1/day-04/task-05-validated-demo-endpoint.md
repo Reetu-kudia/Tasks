@@ -184,3 +184,4 @@ Developers can import the collection directly into Postman to test:
 1. Valid 96-block generation returns `200 OK`.
 2. Invalid date format returns `400 Bad Request` with target field `"date"`.
 3. Unknown region code returns `400 Bad Request` with target field `"region"`.
+

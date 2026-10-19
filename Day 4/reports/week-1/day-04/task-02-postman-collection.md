@@ -157,3 +157,4 @@ This collection adheres to the following sanitization policies:
 4. Execute `Health Probe` -> verify `200 OK`.
 5. Enter local password into `testPassword` variable -> Execute `Operator Login` -> token is automatically populated into `{{authToken}}`.
 6. Execute `Get Authorized Regions` -> verify `200 OK` with territorial jurisdiction items.
+

@@ -199,3 +199,4 @@ A resilient power-grid software system must fail predictably and gracefully. Whe
 1. **Never Assume 200 OK:** Every `fetch` or `axios` call must explicitly inspect `response.ok` or catch HTTP status codes before attempting to access `response.data`.
 2. **Handle Safe Error Bodies:** When the server returns `{ "error": "message" }`, the UI should display the exact message to the user rather than generic strings like *"Something went wrong"*.
 3. **Prevent Infinite Redirect Loops:** Public routes (`/login`, `/api/health`) must never trigger 401 redirect cascades.
+

@@ -83,3 +83,4 @@ console.log(`Results: ${passCount} PASSED, ${failCount} FAILED out of ${passCoun
 console.log('---------------------------------------------------------------');
 
 process.exit(failCount === 0 ? 0 : 1);
+

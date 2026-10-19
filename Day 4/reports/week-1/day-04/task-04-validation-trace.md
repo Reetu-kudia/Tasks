@@ -193,3 +193,4 @@ Consider user creation:
 
 * **Client validation is for User Experience** (instant error highlighting, preventing unnecessary network calls).
 * **Server validation is for Security, System Survival, and Data Integrity.**
+
