@@ -249,3 +249,4 @@ export const FilterBarView: React.FC<FilterBarViewProps> = ({ onFiltersChange })
     </div>
   )
 }
+

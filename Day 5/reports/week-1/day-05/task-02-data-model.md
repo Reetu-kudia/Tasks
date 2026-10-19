@@ -331,3 +331,4 @@ For the frontend and API integration tasks in Day 5, we utilize strictly approve
 - [x] Time-series unique constraints (`ForecastRun` and `MiPrediction`) identified.
 - [x] Database safety boundaries and risks of unapproved schema migrations explicitly analyzed.
 - [x] Approved test-only isolation source confirmed before proceeding to read integration.
+
