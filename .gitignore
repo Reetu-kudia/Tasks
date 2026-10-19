@@ -1,4 +1,7 @@
-/Day 2
-/Day 3
+node_modules/
+dist/
 /Day 4
 /test.png
+*.log
+.DS_Store
+Thumbs.db

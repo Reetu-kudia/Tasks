@@ -1,0 +1,2733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GI-IITB (GRID-INDIA IITB) Experimental Forecast</title>
+  
+  <!-- Leaflet CSS for Genuine Interactive Cartography -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #000000;
+      color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    body.light-mode {
+      background-color: #f4f4f5;
+      color: #09090b;
+    }
+
+    body.light-mode header {
+      background-color: #ffffff !important;
+      border-color: #e4e4e7 !important;
+    }
+
+    body.light-mode .card-box {
+      background-color: #ffffff !important;
+      border-color: #e4e4e7 !important;
+      color: #09090b !important;
+    }
+
+    body.light-mode .sub-card {
+      background-color: #f9fafb !important;
+      border-color: #e4e4e7 !important;
+    }
+
+    body.light-mode select,
+    body.light-mode input {
+      background-color: #f4f4f5 !important;
+      border-color: #d4d4d8 !important;
+      color: #09090b !important;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #000000;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3f3f46;
+    }
+
+    /* Form Controls matching Screenshots */
+    .ctrl-label {
+      display: block;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #a1a1aa;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ctrl-select, .ctrl-input {
+      width: 100%;
+      background-color: #0c0c0e;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      padding: 4px 8px;
+      color: #ffffff;
+      font-size: 11px;
+      outline: none;
+      cursor: pointer;
+      height: 28px;
+      box-sizing: border-box;
+      transition: border-color 0.15s ease;
+    }
+
+    .ctrl-select:hover, .ctrl-input:hover {
+      border-color: #3f3f46;
+    }
+
+    .ctrl-select:focus, .ctrl-input:focus {
+      border-color: #f59e0b;
+    }
+
+    /* Containers */
+    .card-box {
+      background-color: #000000;
+      border: 1px solid #1f1f23;
+      border-radius: 8px;
+      padding: 10px 14px;
+      box-sizing: border-box;
+    }
+
+    .sub-card {
+      background-color: #0c0c0e;
+      border: 1px solid #1f1f23;
+      border-radius: 6px;
+      padding: 9px 12px;
+    }
+
+    /* Leaflet Overrides */
+    .leaflet-container {
+      background: #000000 !important;
+      font-family: inherit !important;
+    }
+    .leaflet-bar a {
+      background-color: #ffffff !important;
+      color: #000000 !important;
+      border-bottom: 1px solid #ccc !important;
+    }
+    .leaflet-bar a:hover {
+      background-color: #f4f4f4 !important;
+    }
+
+    /* Quick Action Buttons */
+    .act-btn {
+      flex: 1;
+      height: 28px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      outline: none;
+    }
+
+    /* Graph Pill Toggles */
+    .graph-pill-btn {
+      background: #18181b;
+      border: 1px solid #27272a;
+      color: #71717a;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .graph-pill-btn.active {
+      background: #3f3f46;
+      color: #ffffff;
+      border-color: #52525b;
+    }
+
+    /* Green pulsing marker animation on map */
+    @keyframes pulseGreen {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.6); opacity: 0.4; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .green-pulse-pin {
+      animation: pulseGreen 2s infinite ease-in-out;
+    }
+
+    /* Floating View Switcher (Discreet Bottom-Left) */
+    #quick-view-toggle {
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      z-index: 9999;
+      background: rgba(18, 18, 22, 0.9);
+      backdrop-filter: blur(8px);
+      border: 1px solid #2e2e35;
+      border-radius: 20px;
+      padding: 3px 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+      font-size: 10px;
+    }
+    #quick-view-toggle button {
+      background: transparent;
+      border: none;
+      color: #a1a1aa;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    #quick-view-toggle button.active-v {
+      background: #f59e0b;
+      color: #000000;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================= -->
+  <!-- 1. MASTER HEADER (Matching Screenshots 1, 2, 3 Exactly)   -->
+  <!-- ========================================================= -->
+  <header style="height:52px; background-color:#000000; border-bottom:1px solid #1f1f23; padding:0 20px; display:flex; align-items:center; justify-content:space-between; width:100%; box-sizing:border-box; position:sticky; top:0; z-index:1000;">
+    <!-- Left: Circular IITB Emblem -->
+    <div style="display:flex; align-items:center; flex-shrink:0; width:140px;">
+      <div style="width:38px; height:38px; border-radius:50%; background:#ffffff; border:1.5px solid rgba(255,255,255,0.25); overflow:hidden; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+        <img src="public/images/iitb.jpg" alt="IIT Bombay" style="width:100%; height:100%; object-fit:contain; border-radius:50%;" onerror="this.src='../Day 2/public/images/iitb.jpg'; if(!this.complete) this.src='public/images/iitb.jpg';" />
+      </div>
+    </div>
+
+    <!-- Center: Title & Subtitle -->
+    <div style="text-align:center; flex:1 1 auto; overflow:hidden; padding:0 10px;">
+      <h1 style="font-size:15px; font-weight:800; color:#ffffff; margin:0; letter-spacing:0.02em; white-space:nowrap; text-overflow:ellipsis;">
+        GI-IITB (GRID-INDIA IITB) Experimental Forecast
+      </h1>
+      <p style="font-size:8.5px; font-weight:600; color:#888891; margin:2px 0 0 0; letter-spacing:0.22em; text-transform:uppercase;">
+        NOWCASTING • INTRA • MEDIUM
+      </p>
+    </div>
+
+    <!-- Right: Official GRID-INDIA White Logo Card -->
+    <div style="display:flex; align-items:center; justify-content:flex-end; flex-shrink:0; width:140px;">
+      <div style="height:36px; width:120px; background:#ffffff; border-radius:6px; padding:2px 8px; box-shadow:0 2px 6px rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; box-sizing:border-box;">
+        <img src="public/images/grid_india.png" alt="GRID-INDIA" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.src='../Day 2/public/images/grid_india.png'; if(!this.complete) this.src='public/images/grid_india.png';" />
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================= -->
+  <!-- 2. MAIN APPLICATION CONTENT                               -->
+  <!-- ========================================================= -->
+  <main style="flex:1; width:100%; padding:8px 12px 24px 12px; box-sizing:border-box;">
+
+    <!-- ======================================================= -->
+    <!-- VIEW A: REAL FORECAST DASHBOARD                         -->
+    <!-- ======================================================= -->
+    <div id="view-dashboard" style="display:flex; flex-direction:column; gap:10px; width:100%;">
+      
+      <!-- ABOVE-THE-FOLD: 2-COLUMN SPLIT (LEFT 50% | RIGHT 50%) -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; align-items:stretch;">
+
+        <!-- ─────────────────────────────────────────────────── -->
+        <!-- COLUMN 1 (LEFT 50%): CONTROLS + SELECTION + MAP     -->
+        <!-- ─────────────────────────────────────────────────── -->
+        <div style="display:flex; flex-direction:column; gap:8px; min-width:0;">
+
+          <!-- CONTROLS PANEL (Dense, matching Screenshots 1 & 3) -->
+          <div class="card-box" style="display:flex; flex-direction:column; gap:8px;">
+            <div style="font-size:11px; font-weight:800; color:#ffffff; text-transform:uppercase; letter-spacing:0.08em;">
+              CONTROLS
+            </div>
+
+            <!-- Row 1 of Filters (3 columns) -->
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+              <div>
+                <label class="ctrl-label">Generation Type</label>
+                <select id="sel-gen" class="ctrl-select" onchange="onFilterParamChange()">
+                  <option value="Solar" selected>Solar</option>
+                  <option value="Wind">Wind</option>
+                  <option value="Hydro">Hydro</option>
+                </select>
+              </div>
+              <div>
+                <label class="ctrl-label">Region</label>
+                <select id="sel-region" class="ctrl-select" onchange="onFilterParamChange()">
+                  <option value="All Grids" selected>All Grids</option>
+                  <option value="Western Region">Western Region</option>
+                  <option value="Northern Region">Northern Region</option>
+                  <option value="Southern Region">Southern Region</option>
+                </select>
+              </div>
+              <div>
+                <label class="ctrl-label">State / ISTS Category</label>
+                <select id="sel-cat" class="ctrl-select" onchange="onCategoryChange()">
+                  <option value="ISTS" selected>ISTS</option>
+                  <option value="State">State</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Row 2 of Filters (5 columns) -->
+            <div style="display:grid; grid-template-columns:1.15fr 1.35fr 1.25fr 1.1fr 1fr; gap:6px;">
+              <!-- Dynamic Field: State or Pooling Station -->
+              <div>
+                <label id="lbl-dyn-col" class="ctrl-label">Pooling Station</label>
+                <select id="sel-dyn-col" class="ctrl-select" onchange="onFilterParamChange()">
+                  <option value="All Pooling Stations" selected>All Pooling Stations</option>
+                  <option value="Khavda PSS-1">Khavda PSS-1</option>
+                  <option value="Fatehgarh PSS-2">Fatehgarh PSS-2</option>
+                  <option value="Bhadla PSS">Bhadla PSS</option>
+                  <option value="Nagda PSS">Nagda PSS</option>
+                </select>
+              </div>
+              <div>
+                <label class="ctrl-label">Plant</label>
+                <select id="sel-plant" class="ctrl-select" onchange="onPlantChange()">
+                  <option value="AGE24AL_PSS3_KPS1_S" selected>AGE24AL_PSS3___</option>
+                  <option value="All Plants">All Plants</option>
+                  <option value="CHARANKA_SOLAR_PARK">CHARANKA_SOLAR_PARK</option>
+                  <option value="BHADLA_SOLAR_PARK">BHADLA_SOLAR_PARK</option>
+                  <option value="220_33KV_BAKTAPUR">220_33KV_BAKTAPUR</option>
+                  <option value="400KV_NAGDA">400KV_NAGDA</option>
+                </select>
+              </div>
+              <div>
+                <label class="ctrl-label">Run date</label>
+                <input id="sel-date" type="date" value="2026-10-18" class="ctrl-input" onchange="onFilterParamChange()" />
+                <div id="subtext-daterange" style="font-size:7.5px; color:#eab308; margin-top:2px; white-space:nowrap;">2025-08-25 -> 2026-10-18: 55 dates</div>
+              </div>
+              <div>
+                <label class="ctrl-label">Forecasting Type</label>
+                <select id="sel-mode" class="ctrl-select" onchange="onModeChange()">
+                  <option value="Intra" selected>Intra</option>
+                  <option value="Nowcasting">Nowcasting</option>
+                  <option value="Medium">Medium</option>
+                </select>
+              </div>
+              <div>
+                <label class="ctrl-label">Revision</label>
+                <select id="sel-rev" class="ctrl-select" onchange="onFilterParamChange()">
+                  <option value="Latest (2026-10-18)" selected>Latest (2026-10-18)</option>
+                  <option value="Rev 0">Rev 0</option>
+                  <option value="Rev 1">Rev 1</option>
+                  <option value="Rev 2">Rev 2</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Row 3: Selection Summary & Orange Apply Button (Matching Screenshot 3) -->
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; background:#0c0c0e; border:1px solid #1f1f23; border-radius:6px; padding:8px 12px;">
+              <!-- 4-Column Dense Selection Summary -->
+              <div style="flex:1; overflow:hidden;">
+                <div style="font-size:8px; font-weight:800; color:#71717a; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:4px;">
+                  SELECTION SUMMARY
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); column-gap:8px; row-gap:3px; font-size:9px;">
+                  <div><span style="color:#71717a;">GENERATION: </span><strong id="sum-gen" style="color:#ffffff;">Solar</strong></div>
+                  <div><span style="color:#71717a;">MODEL: </span><strong id="sum-mode" style="color:#ffffff;">Intra</strong></div>
+                  <div><span style="color:#71717a;">GRID: </span><strong id="sum-grid" style="color:#ffffff;">All Grids</strong></div>
+                  <div><span style="color:#71717a;">CATEGORY: </span><strong id="sum-cat" style="color:#ffffff;">ISTS</strong></div>
+                  <div><span id="lbl-sum-region-or-station" style="color:#71717a;">REGION: </span><strong id="sum-region" style="color:#ffffff;">—</strong></div>
+                  <div><span style="color:#71717a;">RUN DATE: </span><strong id="sum-date" style="color:#ffffff;">2026-10-18</strong></div>
+                  <div><span style="color:#71717a;">REVISION: </span><strong id="sum-rev" style="color:#ffffff;">Latest</strong></div>
+                  <div id="box-sum-station-plant" style="grid-column:span 1;"><span id="lbl-sum-p" style="color:#71717a;">STATION: </span><strong id="sum-plant" style="color:#ffffff;">All Pooling Stations</strong></div>
+                </div>
+              </div>
+
+              <!-- Orange Apply Button & Auto-refresh Toggle -->
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">
+                <button type="button" onclick="applyDashboardFilters()" style="background-color:#ea580c; color:#ffffff; border:none; border-radius:6px; padding:7px 18px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; box-shadow:0 2px 6px rgba(234, 88, 12, 0.4); transition:background-color 0.15s ease;">
+                  Apply to Dashboard
+                </button>
+                <div style="display:flex; align-items:center; gap:6px; font-size:9.5px; color:#a1a1aa;">
+                  <span>Auto-refresh</span>
+                  <div style="width:28px; height:15px; background:#27272a; border-radius:10px; position:relative; cursor:pointer; display:inline-block;">
+                    <div style="width:11px; height:11px; background:#ffffff; border-radius:50%; position:absolute; top:2px; right:2px;"></div>
+                  </div>
+                  <span style="color:#71717a; font-size:9px;">10m</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 4: Action Bar (Admin Panel, Theme, Logout) -->
+            <div style="display:flex; gap:8px;">
+              <button type="button" onclick="switchView('admin')" class="act-btn" style="background:#0f1026; border:1.5px solid #6366f1; color:#a5b4fc;">
+                <span>🛡️</span> Admin Panel
+              </button>
+              <button type="button" onclick="toggleTheme()" class="act-btn" style="background:#141416; border:1px solid #27272a; color:#e4e4e7;">
+                <span>☀️</span> Theme
+              </button>
+              <button type="button" onclick="switchView('login')" class="act-btn" style="background:#ef4444; border:none; color:#ffffff;">
+                <span>Logout</span> ➔
+              </button>
+            </div>
+          </div>
+
+          <!-- INTERACTIVE INDIA LEAFLET MAP (With Zoomed Kutch/Khavda green pin & markers) -->
+          <div class="card-box" style="height:380px; padding:0; overflow:hidden; position:relative; border-radius:8px;">
+            <div id="interactive-india-map" style="width:100%; height:100%; background:#09090b;"></div>
+          </div>
+
+        </div>
+
+        <!-- ─────────────────────────────────────────────────── -->
+        <!-- COLUMN 2 (RIGHT 50%): SUMMARY CARDS + TWO CHARTS    -->
+        <!-- ─────────────────────────────────────────────────── -->
+        <div style="display:flex; flex-direction:column; gap:8px; min-width:0;">
+
+          <!-- SUMMARY HEADING & CARDS (Single Plant vs All Plants layout) -->
+          <div class="card-box" style="display:flex; flex-direction:column; gap:8px;">
+            <div style="font-size:11px; font-weight:800; color:#ffffff; text-transform:uppercase; letter-spacing:0.08em;">
+              SUMMARY
+            </div>
+
+            <div id="summary-cards-container" style="display:grid; grid-template-columns:1.25fr 1.15fr 1fr; gap:8px;">
+              
+              <!-- Card 1: FORECAST CONTEXT -->
+              <div class="sub-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="display:flex; align-items:center; gap:5px; margin-bottom:5px;">
+                    <span style="color:#f59e0b; font-size:11px;">🎯</span>
+                    <span style="font-size:9.5px; font-weight:800; color:#f59e0b; text-transform:uppercase; letter-spacing:0.06em;">FORECAST CONTEXT</span>
+                  </div>
+
+                  <!-- Container: either Single Plant table or States breakdown -->
+                  <div id="context-body">
+                    <!-- Default: Single Plant (AGE24AL_PSS3_KPS1_S matching Screenshot 3) -->
+                    <div style="display:flex; flex-direction:column; gap:3px; font-size:9px;">
+                      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                        <span style="color:#71717a;">Plant:</span>
+                        <strong id="ctx-plant-name" style="color:#ffffff; font-size:8.5px; font-family:monospace;">AGE24AL_PSS3_KPS1_S</strong>
+                      </div>
+                      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                        <span style="color:#71717a;">Installed Capacity:</span>
+                        <strong id="ctx-plant-ic" style="color:#ffffff; font-size:10px; font-family:monospace;">400.0 MW</strong>
+                      </div>
+                      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                        <span style="color:#71717a;">Forecasting Type:</span>
+                        <strong id="ctx-mode" style="color:#ffffff;">Intraday</strong>
+                      </div>
+                      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                        <span style="color:#71717a;">Revision:</span>
+                        <strong style="color:#ffffff;">Till Latest</strong>
+                      </div>
+                      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                        <span style="color:#71717a;">Time Range:</span>
+                        <div style="text-align:right; font-size:8px; color:#ffffff;">
+                          Oct 18, 08:30<br>
+                          <span style="color:#f59e0b;">➔ Oct 21, 05:15</span>
+                        </div>
+                      </div>
+                      <div style="display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid #1f1f23; padding-top:2px;">
+                        <span style="color:#71717a;">Run Time:</span>
+                        <span style="color:#a1a1aa; font-size:8.5px;">Oct 18, 08:30</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 2: UPCOMING FORECAST -->
+              <div class="sub-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="display:flex; align-items:center; gap:5px; margin-bottom:2px;">
+                    <span style="color:#f59e0b; font-size:11px;">⚡</span>
+                    <span style="font-size:9.5px; font-weight:800; color:#f59e0b; text-transform:uppercase; letter-spacing:0.06em;">UPCOMING FORECAST</span>
+                  </div>
+                  <div style="font-size:7.5px; color:#71717a; margin-bottom:6px;">Current &amp; next 3 time blocks · 15 min slots</div>
+
+                  <!-- 2x2 Grid -->
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
+                    <div style="background:#181432; border:1.5px solid #4338ca; border-radius:6px; padding:5px 7px;">
+                      <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:10px; font-weight:800; color:#c084fc;">T</span>
+                        <span id="slot-t0-time" style="font-size:8px; color:#a5b4fc;">00:00</span>
+                      </div>
+                      <div id="slot-t0-val" style="font-size:12px; font-weight:800; color:#c084fc; margin-top:2px; font-family:monospace;">0.0 <span style="font-size:8px; font-weight:400;">MW</span></div>
+                    </div>
+                    <div style="background:#09090b; border:1px solid #27272a; border-radius:6px; padding:5px 7px;">
+                      <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:10px; font-weight:800; color:#f59e0b;">T+1</span>
+                        <span id="slot-t1-time" style="font-size:8px; color:#71717a;">00:15</span>
+                      </div>
+                      <div id="slot-t1-val" style="font-size:12px; font-weight:800; color:#ffffff; margin-top:2px; font-family:monospace;">0.0 <span style="font-size:8px; font-weight:400; color:#71717a;">MW</span></div>
+                    </div>
+                    <div style="background:#09090b; border:1px solid #27272a; border-radius:6px; padding:5px 7px;">
+                      <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:10px; font-weight:800; color:#f59e0b;">T+2</span>
+                        <span id="slot-t2-time" style="font-size:8px; color:#71717a;">00:30</span>
+                      </div>
+                      <div id="slot-t2-val" style="font-size:12px; font-weight:800; color:#ffffff; margin-top:2px; font-family:monospace;">0.0 <span style="font-size:8px; font-weight:400; color:#71717a;">MW</span></div>
+                    </div>
+                    <div style="background:#09090b; border:1px solid #27272a; border-radius:6px; padding:5px 7px;">
+                      <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:10px; font-weight:800; color:#f59e0b;">T+3</span>
+                        <span id="slot-t3-time" style="font-size:8px; color:#71717a;">00:45</span>
+                      </div>
+                      <div id="slot-t3-val" style="font-size:12px; font-weight:800; color:#ffffff; margin-top:2px; font-family:monospace;">0.0 <span style="font-size:8px; font-weight:400; color:#71717a;">MW</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 3: Stacked LIVE SOLAR POWER + WEATHER ALERT (Matching Screenshot 3) -->
+              <div id="card-3-col" style="display:flex; flex-direction:column; gap:6px;">
+                <!-- Sub-Card 3A: LIVE SOLAR POWER -->
+                <div id="subcard-live-solar" class="sub-card" style="padding:6px 10px; display:flex; flex-direction:column; justify-content:center;">
+                  <div style="display:flex; align-items:center; gap:5px; margin-bottom:2px;">
+                    <span style="color:#f59e0b; font-size:10px;">⚡</span>
+                    <span style="font-size:9px; font-weight:800; color:#f59e0b; text-transform:uppercase; letter-spacing:0.04em;">LIVE SOLAR POWER</span>
+                  </div>
+                  <div style="font-size:7.5px; color:#71717a; text-transform:uppercase;">LIVE POWER · AS OF 23:45 IST</div>
+                  <div style="display:flex; align-items:baseline; gap:6px; margin-top:2px;">
+                    <span id="live-solar-val" style="font-size:15px; font-weight:900; color:#10b981; font-family:monospace;">0.0 <span style="font-size:9px; font-weight:600;">MW</span></span>
+                    <span style="font-size:8px; color:#71717a;">latest actual</span>
+                  </div>
+                </div>
+
+                <!-- Sub-Card 3B: WEATHER ALERT -->
+                <div id="subcard-weather" class="sub-card" style="padding:6px 10px; flex:1; display:flex; flex-direction:column; justify-content:center;">
+                  <div style="display:flex; align-items:center; gap:5px; margin-bottom:4px;">
+                    <span style="color:#f59e0b; font-size:10px;">☁️</span>
+                    <span style="font-size:9px; font-weight:800; color:#f59e0b; text-transform:uppercase; letter-spacing:0.04em;">WEATHER ALERT</span>
+                  </div>
+                  <div style="margin-bottom:3px;">
+                    <span style="display:inline-flex; align-items:center; gap:3px; background:#291804; border:1px solid #b45309; border-radius:9999px; padding:1px 7px; font-size:7.5px; font-weight:800; color:#f59e0b;">
+                      ● COMING SOON
+                    </span>
+                  </div>
+                  <p style="margin:0; font-size:7.5px; color:#71717a; line-height:1.3;">
+                    Solar and wind weather alerts will appear here.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- TWO DUAL FORECASTING CHARTS (Multi-Day Horizon & Original/Corrected Toggle) -->
+          <div style="display:flex; flex-direction:column; gap:8px;">
+
+            <!-- CHART 1: GHI (W/M²) with [Original] [Corrected] toggle buttons -->
+            <div class="card-box" style="padding:8px 12px 6px 12px; position:relative;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+                <span style="font-size:11px; font-weight:800; color:#f59e0b; text-transform:uppercase; letter-spacing:0.04em;">
+                  GHI (W/M²)
+                </span>
+                <!-- Original / Corrected Toggle Pill matching Screenshot 3 -->
+                <div style="display:flex; align-items:center; gap:2px; background:#0c0c0e; border:1px solid #27272a; border-radius:4px; padding:1px;">
+                  <button type="button" id="btn-orig" class="graph-pill-btn active" onclick="setGraphCorrection(false)">Original</button>
+                  <button type="button" id="btn-corr" class="graph-pill-btn" onclick="setGraphCorrection(true)">Corrected</button>
+                </div>
+              </div>
+
+              <!-- SVG Curve Container (Dynamically rendered based on Mode: Intra vs Nowcasting) -->
+              <div id="ghi-chart-container" style="position:relative; width:100%;">
+                <!-- Injected by renderCharts() -->
+              </div>
+
+              <!-- Centered Bottom Legend -->
+              <div style="display:flex; justify-content:center; align-items:center; gap:6px; margin-top:2px;">
+                <span style="width:7px; height:7px; border-radius:50%; background-color:#f59e0b;"></span>
+                <span style="color:#a1a1aa; font-size:9px; font-weight:600;">ghi_pred</span>
+              </div>
+            </div>
+
+            <!-- CHART 2: SOLAR POWER (MW) with Actual Flagged Anomaly Highlight -->
+            <div class="card-box" style="padding:8px 12px 6px 12px; position:relative;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+                <span style="font-size:11px; font-weight:800; color:#f59e0b; text-transform:uppercase; letter-spacing:0.04em;">
+                  SOLAR POWER (MW)
+                </span>
+              </div>
+
+              <!-- SVG Curve Container -->
+              <div id="solar-chart-container" style="position:relative; width:100%;">
+                <!-- Injected by renderCharts() -->
+              </div>
+
+              <!-- Centered Bottom Legends matching Screenshot 3 -->
+              <div style="display:flex; justify-content:center; align-items:center; gap:14px; margin-top:2px;">
+                <div style="display:flex; align-items:center; gap:4px;">
+                  <span style="width:7px; height:7px; border-radius:50%; background-color:#10b981;"></span>
+                  <span style="color:#a1a1aa; font-size:9px; font-weight:600;">solar_actual</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px;">
+                  <span style="width:7px; height:7px; border-radius:50%; background-color:#38bdf8;"></span>
+                  <span style="color:#a1a1aa; font-size:9px; font-weight:600;">solar_pred</span>
+                </div>
+                <div id="legend-flagged-item" style="display:flex; align-items:center; gap:4px;">
+                  <span style="width:8px; height:8px; border:1px solid #ef4444; background:rgba(239, 68, 68, 0.25);"></span>
+                  <span style="color:#a1a1aa; font-size:9px; font-weight:600;">Actual generation data flagged by source</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ======================================================= -->
+      <!-- LOWER DETAILED DATA PANEL (SCREENSHOT 2)                -->
+      <!-- ======================================================= -->
+      <div id="plant-data-panel" class="card-box" style="margin-top:4px;">
+        <!-- Yellow Available Range Banner -->
+        <div style="font-size:9.5px; font-weight:700; color:#eab308; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;">
+          AVAILABLE RANGE: 2025-08-29 -> 2026-10-18
+        </div>
+
+        <!-- Filter Toolbar matching Screenshot 2 Exactly -->
+        <div style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; margin-bottom:12px;">
+          <div>
+            <label class="ctrl-label">GENERATION TYPE</label>
+            <select class="ctrl-select" style="width:110px;">
+              <option selected>Solar</option>
+              <option>Wind</option>
+            </select>
+          </div>
+          <div>
+            <label class="ctrl-label">REGION</label>
+            <select class="ctrl-select" style="width:110px;">
+              <option selected>All Grids</option>
+              <option>Western Region</option>
+            </select>
+          </div>
+          <div>
+            <label class="ctrl-label">STATE / ISTS CATEGORY</label>
+            <select class="ctrl-select" style="width:120px;">
+              <option selected>ISTS</option>
+              <option>State</option>
+            </select>
+          </div>
+          <div>
+            <label class="ctrl-label">STATE</label>
+            <select class="ctrl-select" style="width:90px;">
+              <option selected>All</option>
+              <option>Gujarat</option>
+            </select>
+          </div>
+          <div>
+            <label class="ctrl-label">PLANT</label>
+            <select class="ctrl-select" style="width:120px;">
+              <option selected>All Plants</option>
+            </select>
+          </div>
+
+          <!-- Grouped: PERIOD, FORECASTING TYPE & REVISION -->
+          <div style="display:flex; flex-direction:column; gap:3px;">
+            <label class="ctrl-label">PERIOD, FORECASTING TYPE &amp; REVISION</label>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="date" value="2026-10-18" class="ctrl-input" style="width:125px;" />
+              <span style="color:#71717a;">-</span>
+              <input type="date" value="2026-10-18" class="ctrl-input" style="width:125px;" />
+              <select class="ctrl-select" style="width:110px;">
+                <option selected>Nowcasting</option>
+                <option>Intra</option>
+              </select>
+              <select class="ctrl-select" style="width:95px;">
+                <option selected>REV All</option>
+                <option>REV 0</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- EXPORT Section & Green Download Button -->
+        <div style="margin-bottom:12px;">
+          <div style="font-size:8px; font-weight:700; color:#71717a; text-transform:uppercase; margin-bottom:4px;">EXPORT</div>
+          <button type="button" onclick="triggerDownload()" style="background-color:#10b981; color:#000000; border:none; border-radius:6px; padding:6px 16px; font-size:11px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(16, 185, 129, 0.3);">
+            <span>📥</span> Download Excel (280)
+          </button>
+        </div>
+
+        <!-- Toast Notice -->
+        <div id="export-toast" style="display:none; background:rgba(16,185,129,0.15); border:1px solid #10b981; border-radius:5px; padding:7px 12px; margin-bottom:10px; font-size:11px; color:#10b981; font-weight:700;">
+          ✓ Export initiated: GI_IITB_Forecast_Telemetry_20261018.xlsx (280 records exported)
+        </div>
+
+        <!-- 5-COLUMN DATA TABLE (Matching Screenshot 2 1:1) -->
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:11px;">
+            <thead>
+              <tr style="background:#000000; border-bottom:1px solid #27272a; color:#888890; font-size:9.5px; text-transform:uppercase; letter-spacing:0.06em;">
+                <th style="padding:8px 12px;">PLANT</th>
+                <th style="padding:8px 12px;">DATE &amp; TIME (IST)</th>
+                <th style="padding:8px 12px;">REV</th>
+                <th style="padding:8px 12px;">GHI PRED</th>
+                <th style="padding:8px 12px;">SOLAR PRED</th>
+              </tr>
+            </thead>
+            <tbody id="telemetry-table-rows">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- PAGINATION FOOTER (Matching Screenshot 2 1:1) -->
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 4px 4px 4px; border-top:1px solid #1f1f23; font-size:11px; color:#71717a;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span>1-20 of 280 Rows</span>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span>Rows:</span>
+              <select style="background:#0c0c0e; border:1px solid #27272a; color:#ffffff; font-size:10px; border-radius:4px; padding:2px 6px;">
+                <option selected>20</option>
+                <option>50</option>
+                <option>100</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button type="button" style="background:#0c0c0e; border:1px solid #27272a; color:#71717a; border-radius:4px; padding:2px 8px; cursor:not-allowed;">&lt;</button>
+            <button type="button" style="background:#0c0c0e; border:1px solid #27272a; color:#ffffff; border-radius:4px; padding:2px 8px; cursor:pointer;">&gt;</button>
+            <span style="color:#ffffff; font-weight:700; font-size:10px; margin-left:6px;">1/14</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- VIEW B: ADMIN VIEW                                      -->
+    <!-- ======================================================= -->
+    <!-- ======================================================= -->
+    <!-- VIEW B: PRODUCTION ADMIN PANEL (6 SECTIONS)             -->
+    <!-- ======================================================= -->
+    <div id="view-admin" style="display:none; width:100%; flex-direction:column; gap:0; margin-top:-8px;">
+      
+      <!-- Top Admin Header Bar -->
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#000000; border-bottom:1px solid #1f1f23; padding:8px 16px; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:16px; cursor:pointer;" onclick="toggleAdminSidebarCollapse()">☰</span>
+          <span style="font-size:13px; font-weight:900; color:#f59e0b; letter-spacing:0.05em;">GI</span>
+          <span style="color:#52525b;">|</span>
+          <span style="font-size:11px; font-weight:800; color:#f59e0b; letter-spacing:0.08em; display:flex; align-items:center; gap:5px;">
+            <span>🛡️</span> ADMIN PANEL
+          </span>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="color:#71717a; font-size:13px; cursor:pointer;" title="Notifications">🔔</span>
+          <span style="font-size:11px; color:#a1a1aa;">Super Admin</span>
+          <span style="background:#f59e0b; color:#000000; font-size:10px; font-weight:800; border-radius:9999px; padding:2px 8px;">Super Admin</span>
+          <button type="button" onclick="switchView('dashboard')" style="background:#18181b; color:#e4e4e7; border:1px solid #3f3f46; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:4px;">
+            <span>←</span> Forecasting Portal
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Admin Body: Left Sidebar + Main Content -->
+      <div style="display:flex; gap:16px; width:100%;">
+        
+        <!-- Left Persistent Icon Sidebar (60px) -->
+        <aside id="admin-icon-sidebar" style="width:56px; background:#0a0a0c; border:1px solid #1f1f23; border-radius:8px; padding:12px 6px; display:flex; flex-direction:column; align-items:center; gap:8px; flex-shrink:0; height:fit-content;">
+          <div style="font-size:9px; font-weight:800; color:#f59e0b; letter-spacing:0.08em; margin-bottom:4px;">ADMIN</div>
+          
+          <button type="button" id="admin-nav-overview" onclick="switchAdminSection('overview')" title="Admin Dashboard" style="width:42px; height:42px; border-radius:8px; border:1px solid #f59e0b; background:rgba(245,158,11,0.15); color:#f59e0b; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">
+            📊
+          </button>
+
+          <button type="button" id="admin-nav-users" onclick="switchAdminSection('users')" title="Users" style="width:42px; height:42px; border-radius:8px; border:1px solid transparent; background:transparent; color:#71717a; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">
+            👥
+          </button>
+
+          <button type="button" id="admin-nav-plants" onclick="switchAdminSection('plants')" title="Plants" style="width:42px; height:42px; border-radius:8px; border:1px solid transparent; background:transparent; color:#71717a; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">
+            ⚡
+          </button>
+
+          <button type="button" id="admin-nav-regions" onclick="switchAdminSection('regions')" title="Regions" style="width:42px; height:42px; border-radius:8px; border:1px solid transparent; background:transparent; color:#71717a; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">
+            🗺️
+          </button>
+
+          <button type="button" id="admin-nav-coverage" onclick="switchAdminSection('coverage')" title="Live Actuals Coverage" style="width:42px; height:42px; border-radius:8px; border:1px solid transparent; background:transparent; color:#71717a; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">
+            📈
+          </button>
+
+          <button type="button" id="admin-nav-features" onclick="switchAdminSection('features')" title="Features &amp; Maintenance" style="width:42px; height:42px; border-radius:8px; border:1px solid transparent; background:transparent; color:#71717a; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">
+            ⚙️
+          </button>
+
+          <div style="width:100%; height:1px; background:#1f1f23; margin:8px 0;"></div>
+
+          <button type="button" onclick="switchView('dashboard')" title="Exit Admin" style="width:36px; height:36px; border-radius:6px; border:none; background:transparent; color:#71717a; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;">
+            ➔
+          </button>
+        </aside>
+
+        <!-- Right Content Area -->
+        <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- SUB-VIEW 1: OVERVIEW (Screenshot 1) -->
+          <div id="admin-sec-overview" style="display:flex; flex-direction:column; gap:14px;">
+            <div>
+              <h2 style="font-size:18px; font-weight:800; color:#f4f4f5; margin:0;">Admin Dashboard</h2>
+              <div style="font-size:12px; color:#888891; margin-top:2px;">Full system control — all regions, features, and users</div>
+            </div>
+
+            <!-- 4 KPI Cards (Screenshot 1) -->
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px;">
+              <div style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; padding:14px 16px; display:flex; align-items:center; gap:14px;">
+                <div style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25); border-radius:8px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:18px; color:#10b981;">
+                  👥
+                </div>
+                <div>
+                  <div style="font-size:9.5px; font-weight:800; color:#71717a; text-transform:uppercase; letter-spacing:0.06em;">USERS</div>
+                  <div style="font-size:24px; font-weight:900; color:#10b981; line-height:1.1;" id="kpi-users-count">5</div>
+                  <div style="font-size:9px; color:#71717a;">5 total users in the system</div>
+                </div>
+              </div>
+
+              <div style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; padding:14px 16px; display:flex; align-items:center; gap:14px;">
+                <div style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.25); border-radius:8px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:18px; color:#38bdf8;">
+                  ⚡
+                </div>
+                <div>
+                  <div style="font-size:9.5px; font-weight:800; color:#71717a; text-transform:uppercase; letter-spacing:0.06em;">PLANTS</div>
+                  <div style="font-size:24px; font-weight:900; color:#38bdf8; line-height:1.1;" id="kpi-plants-count">1768</div>
+                  <div style="font-size:9px; color:#71717a;">1768 plants across all regions</div>
+                </div>
+              </div>
+
+              <div style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; padding:14px 16px; display:flex; align-items:center; gap:14px;">
+                <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.25); border-radius:8px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:18px; color:#f59e0b;">
+                  🗺️
+                </div>
+                <div>
+                  <div style="font-size:9.5px; font-weight:800; color:#71717a; text-transform:uppercase; letter-spacing:0.06em;">REGIONS</div>
+                  <div style="font-size:24px; font-weight:900; color:#f59e0b; line-height:1.1;">23</div>
+                  <div style="font-size:9px; color:#71717a;">4 states, 1 ISTS, 14 pooling stations</div>
+                </div>
+              </div>
+
+              <div style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; padding:14px 16px; display:flex; align-items:center; gap:14px;">
+                <div style="background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.25); border-radius:8px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:18px; color:#a855f7;">
+                  ⚙️
+                </div>
+                <div>
+                  <div style="font-size:9.5px; font-weight:800; color:#71717a; text-transform:uppercase; letter-spacing:0.06em;">ACTIVE FEATURES</div>
+                  <div style="font-size:24px; font-weight:900; color:#a855f7; line-height:1.1;" id="kpi-features-count">10</div>
+                  <div style="font-size:9px; color:#71717a;">10 / 10 features enabled</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Super Admin Quick Actions Panel (Screenshot 1) -->
+            <div style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; padding:16px;">
+              <div style="font-size:11px; font-weight:800; color:#f59e0b; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:12px;">
+                SUPER ADMIN QUICK ACTIONS
+              </div>
+
+              <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+                <button type="button" onclick="switchAdminSection('features')" style="background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 14px; font-size:11.5px; font-weight:700; cursor:pointer;">
+                  ⚙️ Manage Features
+                </button>
+                <button type="button" onclick="openAdminModal('maintenance')" style="background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 14px; font-size:11.5px; font-weight:700; cursor:pointer;">
+                  ⚠️ Toggle Maintenance
+                </button>
+                <button type="button" onclick="openAdminModal('user')" style="background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 14px; font-size:11.5px; font-weight:700; cursor:pointer;">
+                  👤 Create Admin User
+                </button>
+              </div>
+
+              <div id="admin-overview-maint-banner" style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); border-radius:6px; padding:10px 14px; font-size:11px; color:#f59e0b; display:flex; align-items:center; gap:8px;">
+                <span>⚠️</span>
+                <span><strong>Maintenance Mode is currently DISABLED.</strong> Enabling it will block access to non-admin users.</span>
+              </div>
+            </div>
+
+            <!-- Quick Plants Overview Preview -->
+            <div style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; padding:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <div style="font-size:12px; font-weight:800; color:#f4f4f5;">High-Capacity ISTS &amp; State Generation Assets</div>
+                <button type="button" onclick="switchAdminSection('plants')" style="background:none; border:none; color:#38bdf8; font-size:11px; font-weight:700; cursor:pointer;">View All 1768 Plants →</button>
+              </div>
+              <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left;">
+                  <thead>
+                    <tr style="border-bottom:1px solid #1f1f23; color:#71717a; font-size:10px; text-transform:uppercase;">
+                      <th style="padding:6px 10px;">CODE</th>
+                      <th style="padding:6px 10px;">NAME</th>
+                      <th style="padding:6px 10px;">AREA</th>
+                      <th style="padding:6px 10px;">POOLING STATION</th>
+                      <th style="padding:6px 10px; text-align:center;">PORTAL</th>
+                      <th style="padding:6px 10px; text-align:center;">PIPELINE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style="border-bottom:1px solid #18181b;">
+                      <td style="padding:6px 10px; font-weight:700; color:#f59e0b; font-family:monospace;">ACL_PSS3_KPS1_S</td>
+                      <td style="padding:6px 10px;">Adani Solar Khavda 1</td>
+                      <td style="padding:6px 10px; color:#38bdf8;">GJ</td>
+                      <td style="padding:6px 10px; color:#888891;">Khavda PS1</td>
+                      <td style="padding:6px 10px; text-align:center; color:#10b981; font-weight:700;">● Active</td>
+                      <td style="padding:6px 10px; text-align:center; color:#10b981; font-weight:700;">● Ingesting</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #18181b;">
+                      <td style="padding:6px 10px; font-weight:700; color:#f59e0b; font-family:monospace;">AGE24AL_PSS3_KPS1_S</td>
+                      <td style="padding:6px 10px;">Adani Green Energy 24A</td>
+                      <td style="padding:6px 10px; color:#38bdf8;">GJ</td>
+                      <td style="padding:6px 10px; color:#888891;">Khavda PS1</td>
+                      <td style="padding:6px 10px; text-align:center; color:#10b981; font-weight:700;">● Active</td>
+                      <td style="padding:6px 10px; text-align:center; color:#10b981; font-weight:700;">● Ingesting</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #18181b;">
+                      <td style="padding:6px 10px; font-weight:700; color:#f59e0b; font-family:monospace;">BHADLA_NTPC_S</td>
+                      <td style="padding:6px 10px;">NTPC Bhadla Solar Plant</td>
+                      <td style="padding:6px 10px; color:#ec4899;">ISTS</td>
+                      <td style="padding:6px 10px; color:#888891;">Bhadla PS</td>
+                      <td style="padding:6px 10px; text-align:center; color:#10b981; font-weight:700;">● Active</td>
+                      <td style="padding:6px 10px; text-align:center; color:#10b981; font-weight:700;">● Ingesting</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 2: USERS (Screenshot 2) -->
+          <div id="admin-sec-users" style="display:none; flex-direction:column; gap:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h2 style="font-size:18px; font-weight:800; color:#f4f4f5; margin:0;">Users</h2>
+                <div style="font-size:12px; color:#888891; margin-top:2px;" id="admin-user-subtitle">5 total · 5 active</div>
+              </div>
+              <button type="button" onclick="openAdminModal('user')" style="background:#10b981; color:#000000; border:none; border-radius:6px; padding:7px 16px; font-size:12px; font-weight:700; cursor:pointer;">
+                + New User
+              </button>
+            </div>
+
+            <!-- Search input -->
+            <div style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; padding:10px 12px;">
+              <input type="text" id="admin-user-search" oninput="renderAdminUsersTable()" placeholder="Search by username or display name..." style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:6px 10px; font-size:12px; outline:none;" />
+            </div>
+
+            <!-- Users Table -->
+            <div style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; overflow-x:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left;">
+                <thead>
+                  <tr style="background:#141417; border-bottom:1px solid #1f1f23; color:#71717a; text-transform:uppercase; font-size:10px; font-weight:700;">
+                    <th style="padding:9px 14px;">USERNAME</th>
+                    <th style="padding:9px 14px;">DISPLAY NAME</th>
+                    <th style="padding:9px 14px; text-align:center;">STATUS</th>
+                    <th style="padding:9px 14px; text-align:right;">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 3: PLANTS (Screenshot 3) -->
+          <div id="admin-sec-plants" style="display:none; flex-direction:column; gap:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h2 style="font-size:18px; font-weight:800; color:#f4f4f5; margin:0;">Plants</h2>
+                <div style="font-size:12px; color:#888891; margin-top:2px;">1768 plants · 1768 on the portal · 1768 in the pipelines</div>
+              </div>
+              <button type="button" onclick="openAdminModal('plant')" style="background:#10b981; color:#000000; border:none; border-radius:6px; padding:7px 16px; font-size:12px; font-weight:700; cursor:pointer;">
+                + Add Plant
+              </button>
+            </div>
+
+            <!-- Search & Area filter -->
+            <div style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; padding:10px 12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+              <div style="flex:1; min-width:240px;">
+                <input type="text" id="admin-plant-search" oninput="renderAdminPlantsTable()" placeholder="Search by plant name, code, area, or pooling station..." style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:6px 10px; font-size:12px; outline:none;" />
+              </div>
+              <select id="admin-plant-area-filter" onchange="renderAdminPlantsTable()" style="background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:6px 12px; font-size:12px; min-width:150px; outline:none;">
+                <option value="ALL">All areas (1768)</option>
+                <option value="GJ">GJ (640)</option>
+                <option value="MH">MH (512)</option>
+                <option value="MP">MP (385)</option>
+                <option value="CG">CG (142)</option>
+                <option value="ISTS">ISTS (89)</option>
+              </select>
+            </div>
+
+            <!-- Plants Table (7 Columns) -->
+            <div style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; overflow-x:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left; white-space:nowrap;">
+                <thead>
+                  <tr style="background:#141417; border-bottom:1px solid #1f1f23; color:#71717a; text-transform:uppercase; font-size:10px; font-weight:700;">
+                    <th style="padding:9px 12px;">CODE</th>
+                    <th style="padding:9px 12px;">NAME</th>
+                    <th style="padding:9px 12px;">AREA</th>
+                    <th style="padding:9px 12px;">POOLING STATION</th>
+                    <th style="padding:9px 12px; text-align:center;">PORTAL</th>
+                    <th style="padding:9px 12px; text-align:center;">PIPELINE</th>
+                    <th style="padding:9px 12px; text-align:right;">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-plants-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Bar -->
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#888891; padding:4px 2px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span>Rows per page:</span>
+                <select style="background:#0c0c0e; color:#f4f4f5; border:1px solid #1f1f23; border-radius:4px; padding:2px 6px; font-size:11px;">
+                  <option>10</option>
+                  <option>25</option>
+                  <option>50</option>
+                </select>
+              </div>
+              <div>Showing 1–10 of 1768</div>
+              <div style="display:flex; gap:6px;">
+                <button type="button" style="background:#0c0c0e; color:#71717a; border:1px solid #1f1f23; border-radius:4px; padding:3px 10px; font-size:11px; cursor:not-allowed;">&lt; Prev</button>
+                <button type="button" style="background:#0c0c0e; color:#f4f4f5; border:1px solid #1f1f23; border-radius:4px; padding:3px 10px; font-size:11px; cursor:pointer;">Next &gt;</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 4: REGIONS (Screenshot 4) -->
+          <div id="admin-sec-regions" style="display:none; flex-direction:column; gap:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h2 style="font-size:18px; font-weight:800; color:#f4f4f5; margin:0;">Regions</h2>
+                <div style="font-size:12px; color:#888891; margin-top:2px;">4 states · 1 ISTS areas · 14 pooling stations</div>
+              </div>
+              <button type="button" onclick="openAdminModal('region')" style="background:#10b981; color:#000000; border:none; border-radius:6px; padding:7px 16px; font-size:12px; font-weight:700; cursor:pointer;">
+                + Add Region
+              </button>
+            </div>
+
+            <!-- 3 Tabs + Inactive checkbox -->
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1f1f23; padding-bottom:2px; flex-wrap:wrap; gap:10px;">
+              <div style="display:flex; gap:4px;">
+                <button type="button" id="tab-btn-states" onclick="switchRegionTab('states')" style="background:none; border:none; border-bottom:2px solid #f59e0b; color:#f59e0b; font-size:12px; font-weight:700; padding:6px 12px; cursor:pointer;">States &amp; ISTS</button>
+                <button type="button" id="tab-btn-pooling" onclick="switchRegionTab('pooling')" style="background:none; border:none; border-bottom:2px solid transparent; color:#71717a; font-size:12px; font-weight:700; padding:6px 12px; cursor:pointer;">Pooling Stations (14)</button>
+                <button type="button" id="tab-btn-grids" onclick="switchRegionTab('grids')" style="background:none; border:none; border-bottom:2px solid transparent; color:#71717a; font-size:12px; font-weight:700; padding:6px 12px; cursor:pointer;">Grids &amp; RLDCs (3)</button>
+              </div>
+              <label style="display:flex; align-items:center; gap:6px; font-size:11px; color:#71717a; cursor:pointer;">
+                <input type="checkbox" style="accent-color:#f59e0b;" /> Show inactive
+              </label>
+            </div>
+
+            <!-- Regions Tab 1: States & ISTS Table -->
+            <div id="region-tab-states" style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; overflow-x:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left; white-space:nowrap;">
+                <thead>
+                  <tr style="background:#141417; border-bottom:1px solid #1f1f23; color:#71717a; text-transform:uppercase; font-size:10px; font-weight:700;">
+                    <th style="padding:9px 12px;">CODE</th>
+                    <th style="padding:9px 12px;">NAME</th>
+                    <th style="padding:9px 12px;">TYPE</th>
+                    <th style="padding:9px 12px; text-align:right;">PLANTS</th>
+                    <th style="padding:9px 12px; text-align:right;">CAPACITY (MW)</th>
+                    <th style="padding:9px 12px; text-align:center;">STATUS</th>
+                    <th style="padding:9px 12px; text-align:right;">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-states-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- Regions Tab 2: Pooling Stations Table -->
+            <div id="region-tab-pooling" style="display:none; background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; overflow-x:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left; white-space:nowrap;">
+                <thead>
+                  <tr style="background:#141417; border-bottom:1px solid #1f1f23; color:#71717a; text-transform:uppercase; font-size:10px; font-weight:700;">
+                    <th style="padding:9px 12px;">CODE</th>
+                    <th style="padding:9px 12px;">NAME</th>
+                    <th style="padding:9px 12px;">STATE/ISTS</th>
+                    <th style="padding:9px 12px;">GRID</th>
+                    <th style="padding:9px 12px; text-align:right;">PLANTS</th>
+                    <th style="padding:9px 12px; text-align:right;">CAPACITY (MW)</th>
+                    <th style="padding:9px 12px; text-align:center;">STATUS</th>
+                    <th style="padding:9px 12px; text-align:right;">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-pooling-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- Regions Tab 3: Grids & RLDCs Table -->
+            <div id="region-tab-grids" style="display:none; background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; overflow-x:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left; white-space:nowrap;">
+                <thead>
+                  <tr style="background:#141417; border-bottom:1px solid #1f1f23; color:#71717a; text-transform:uppercase; font-size:10px; font-weight:700;">
+                    <th style="padding:9px 12px;">CODE</th>
+                    <th style="padding:9px 12px;">NAME</th>
+                    <th style="padding:9px 12px;">RLDC</th>
+                    <th style="padding:9px 12px;">REGIONS COVERED</th>
+                    <th style="padding:9px 12px; text-align:right;">TOTAL CAPACITY</th>
+                    <th style="padding:9px 12px; text-align:center;">STATUS</th>
+                    <th style="padding:9px 12px; text-align:right;">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-grids-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 5: LIVE ACTUALS COVERAGE (Screenshot 5) -->
+          <div id="admin-sec-coverage" style="display:none; flex-direction:column; gap:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h2 style="font-size:18px; font-weight:800; color:#f4f4f5; margin:0;">Live Actuals Coverage</h2>
+                <div style="font-size:12px; margin-top:3px;">
+                  <span style="color:#888891;">854 plant-days in range · </span>
+                  <span style="color:#ef4444; font-weight:700;">604 with issues</span>
+                </div>
+              </div>
+              <button type="button" onclick="refreshAdminCoverage()" style="background:#18181b; color:#f4f4f5; border:1px solid #1f1f23; border-radius:6px; padding:6px 14px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                <span id="coverage-refresh-icon">🔄</span> Refresh
+              </button>
+            </div>
+
+            <!-- Dense Filter Toolbar (Screenshot 5) -->
+            <div style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; padding:12px 14px; display:flex; flex-wrap:wrap; align-items:center; gap:12px 16px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:11px; font-weight:700; color:#888891; text-transform:uppercase;">From</label>
+                <input type="text" value="06-10-2026" style="background:#18181b; color:#f4f4f5; border:1px solid #1f1f23; border-radius:5px; padding:4px 8px; font-size:11px; font-family:monospace; width:95px;" />
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:11px; font-weight:700; color:#888891; text-transform:uppercase;">To</label>
+                <input type="text" value="19-10-2026" style="background:#18181b; color:#f4f4f5; border:1px solid #1f1f23; border-radius:5px; padding:4px 8px; font-size:11px; font-family:monospace; width:95px;" />
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:11px; font-weight:700; color:#888891; text-transform:uppercase;">From Time</label>
+                <input type="text" value="00:00" style="background:#18181b; color:#f4f4f5; border:1px solid #1f1f23; border-radius:5px; padding:4px 8px; font-size:11px; font-family:monospace; width:65px;" />
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:11px; font-weight:700; color:#888891; text-transform:uppercase;">To Time</label>
+                <input type="text" value="23:45" style="background:#18181b; color:#f4f4f5; border:1px solid #1f1f23; border-radius:5px; padding:4px 8px; font-size:11px; font-family:monospace; width:65px;" />
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:11px; font-weight:700; color:#888891; text-transform:uppercase;">Region</label>
+                <select id="coverage-region-filter" onchange="renderAdminCoverageTable()" style="background:#18181b; color:#f4f4f5; border:1px solid #1f1f23; border-radius:5px; padding:4px 8px; font-size:11px;">
+                  <option value="All">All</option>
+                  <option value="GJ">GJ</option>
+                  <option value="MH">MH</option>
+                  <option value="MP">MP</option>
+                  <option value="CG">CG</option>
+                  <option value="ISTS">ISTS</option>
+                </select>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:11px; font-weight:700; color:#888891; text-transform:uppercase;">Plant</label>
+                <select style="background:#18181b; color:#f4f4f5; border:1px solid #1f1f23; border-radius:5px; padding:4px 8px; font-size:11px; min-width:200px;">
+                  <option>All plants (coverage overview)</option>
+                </select>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+                <label style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:#f59e0b; cursor:pointer;">
+                  <input type="checkbox" id="coverage-only-issues" onchange="renderAdminCoverageTable()" style="accent-color:#f59e0b;" />
+                  Only show issues
+                </label>
+              </div>
+            </div>
+
+            <!-- 11-Column Coverage Table (Screenshot 5) -->
+            <div style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; overflow-x:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left; white-space:nowrap;">
+                <thead>
+                  <tr style="background:#141417; border-bottom:1px solid #1f1f23; color:#888891; text-transform:uppercase; font-size:10px; font-weight:700;">
+                    <th style="padding:9px 12px;">PLANT CODE</th>
+                    <th style="padding:9px 12px;">DATE</th>
+                    <th style="padding:9px 12px; text-align:right;">EXPECTED BLOCKS</th>
+                    <th style="padding:9px 12px; text-align:right;">ACTUAL BLOCKS</th>
+                    <th style="padding:9px 12px; text-align:center;">COVERAGE %</th>
+                    <th style="padding:9px 12px; text-align:right;">MAX MW</th>
+                    <th style="padding:9px 12px; text-align:right;">MIN MW</th>
+                    <th style="padding:9px 12px; text-align:right;">AVG MW</th>
+                    <th style="padding:9px 12px; text-align:right;">ZERO BLOCKS</th>
+                    <th style="padding:9px 12px; text-align:center;">STATUS</th>
+                    <th style="padding:9px 12px; text-align:center;">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-coverage-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 6: FEATURES & MAINTENANCE -->
+          <div id="admin-sec-features" style="display:none; flex-direction:column; gap:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h2 style="font-size:18px; font-weight:800; color:#f4f4f5; margin:0;">Features &amp; Maintenance Settings</h2>
+                <div style="font-size:12px; color:#888891; margin-top:2px;" id="features-status-sub">
+                  10 of 10 features active · <span style="color:#10b981; font-weight:700;">SYSTEM OPERATIONAL</span>
+                </div>
+              </div>
+              <button type="button" onclick="openAdminModal('maintenance')" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid #ef4444; border-radius:6px; padding:7px 14px; font-size:12px; font-weight:700; cursor:pointer;">
+                ⚠️ Toggle Maintenance Mode
+              </button>
+            </div>
+
+            <!-- Maintenance Status Box -->
+            <div id="features-maint-box" style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); border-radius:8px; padding:12px 16px; display:flex; align-items:center; gap:12px;">
+              <span style="font-size:20px;">⚠️</span>
+              <div style="font-size:11px; line-height:1.5;">
+                <strong style="color:#f59e0b;">Maintenance Mode is currently DISABLED.</strong>
+                <span style="color:#888891;">Enabling it will display a maintenance notice to standard users while allowing administrative debugging.</span>
+              </div>
+            </div>
+
+            <!-- 10 Feature Gates Cards -->
+            <div style="background:#0c0c0e; border:1px solid #1f1f23; border-radius:8px; padding:16px;">
+              <div style="font-size:12px; font-weight:700; color:#f59e0b; text-transform:uppercase; margin-bottom:12px;">
+                Configurable Pipeline &amp; Algorithmic Feature Gates
+              </div>
+              <div id="admin-features-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:12px;"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- MODAL 1: CREATE USER (Screenshot 2) -->
+      <div id="modal-admin-user" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:100; align-items:center; justify-content:center; padding:16px;">
+        <div style="background:#121215; border:1px solid #27272a; border-radius:10px; width:100%; max-width:460px; padding:22px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.6);" onclick="event.stopPropagation()">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="margin:0; font-size:16px; font-weight:800; color:#f4f4f5;">Create User</h3>
+            <button type="button" onclick="closeAdminModal('user')" style="background:none; border:none; color:#71717a; font-size:18px; cursor:pointer;">✕</button>
+          </div>
+          <form onsubmit="handleCreateUserSubmit(event)" style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">USERNAME *</label>
+              <input type="text" id="modal-user-username" placeholder="e.g. sldc_operator" required style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;" />
+            </div>
+            <div>
+              <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">PASSWORD *</label>
+              <input type="password" id="modal-user-password" placeholder="••••••••" required style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;" />
+            </div>
+            <div>
+              <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">DISPLAY NAME *</label>
+              <input type="text" id="modal-user-display" placeholder="e.g. Gujarat SLDC Operator" required style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;" />
+            </div>
+            <div>
+              <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">EMAIL (OPTIONAL)</label>
+              <input type="email" id="modal-user-email" placeholder="operator@sldc.in" style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;" />
+            </div>
+            <div>
+              <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">ROLE</label>
+              <select id="modal-user-role" style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;">
+                <option value="user">user</option>
+                <option value="admin">admin</option>
+                <option value="super_admin">super_admin</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:6px;">ASSIGN STATE (OPTIONAL)</label>
+              <div style="display:flex; gap:14px; align-items:center;">
+                <label style="display:flex; align-items:center; gap:5px; font-size:11px; color:#f4f4f5; cursor:pointer;"><input type="checkbox" name="assignState" value="CG" style="accent-color:#10b981;" /> CG</label>
+                <label style="display:flex; align-items:center; gap:5px; font-size:11px; color:#f4f4f5; cursor:pointer;"><input type="checkbox" name="assignState" value="GJ" style="accent-color:#10b981;" /> GJ</label>
+                <label style="display:flex; align-items:center; gap:5px; font-size:11px; color:#f4f4f5; cursor:pointer;"><input type="checkbox" name="assignState" value="MP" style="accent-color:#10b981;" /> MP</label>
+                <label style="display:flex; align-items:center; gap:5px; font-size:11px; color:#f4f4f5; cursor:pointer;"><input type="checkbox" name="assignState" value="MH" style="accent-color:#10b981;" /> MH</label>
+              </div>
+            </div>
+            <button type="submit" style="margin-top:8px; width:100%; background:#10b981; color:#000000; border:none; border-radius:6px; padding:9px; font-size:12px; font-weight:800; cursor:pointer;">
+              Create User
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- MODAL 2: ADD PLANT (Screenshot 3) -->
+      <div id="modal-admin-plant" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:100; align-items:center; justify-content:center; padding:16px;">
+        <div style="background:#121215; border:1px solid #27272a; border-radius:10px; width:100%; max-width:540px; padding:22px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.6);" onclick="event.stopPropagation()">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="margin:0; font-size:16px; font-weight:800; color:#f4f4f5;">Add Plant</h3>
+            <button type="button" onclick="closeAdminModal('plant')" style="background:none; border:none; color:#71717a; font-size:18px; cursor:pointer;">✕</button>
+          </div>
+          <form onsubmit="handleAddPlantSubmit(event)" style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div>
+                <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">CODE *</label>
+                <input type="text" id="modal-plant-code" placeholder="e.g. ACL_PSS3_KPS1_S" required style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px; font-family:monospace;" />
+              </div>
+              <div>
+                <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">NAME *</label>
+                <input type="text" id="modal-plant-name" placeholder="e.g. Adani Solar Khavda 1" required style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;" />
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div>
+                <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">AREA (STATE/ISTS) *</label>
+                <select id="modal-plant-area" style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;">
+                  <option value="GJ">GJ (Gujarat)</option>
+                  <option value="MH">MH (Maharashtra)</option>
+                  <option value="MP">MP (Madhya Pradesh)</option>
+                  <option value="CG">CG (Chhattisgarh)</option>
+                  <option value="ISTS">ISTS (Inter-State)</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">POOLING STATION</label>
+                <input type="text" id="modal-plant-ps" placeholder="e.g. Khavda PS1" style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;" />
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div>
+                <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">CAPACITY (MW)</label>
+                <input type="number" id="modal-plant-capacity" placeholder="300" style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;" />
+              </div>
+              <div>
+                <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">GENERATION TYPE</label>
+                <select id="modal-plant-gentype" style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;">
+                  <option value="Solar">Solar</option>
+                  <option value="Wind">Wind</option>
+                  <option value="Hybrid">Hybrid</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex; gap:20px; padding:4px 0;">
+              <label style="display:flex; align-items:center; gap:6px; font-size:11px; color:#f4f4f5; cursor:pointer;">
+                <input type="checkbox" id="modal-plant-portal" checked style="accent-color:#10b981;" /> PORTAL VISIBLE
+              </label>
+              <label style="display:flex; align-items:center; gap:6px; font-size:11px; color:#f4f4f5; cursor:pointer;">
+                <input type="checkbox" id="modal-plant-pipeline" checked style="accent-color:#10b981;" /> PIPELINE ACTIVE
+              </label>
+            </div>
+            <button type="submit" style="margin-top:8px; width:100%; background:#10b981; color:#000000; border:none; border-radius:6px; padding:9px; font-size:12px; font-weight:800; cursor:pointer;">
+              Add Plant
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- MODAL 3: ADD REGION (Screenshot 4) -->
+      <div id="modal-admin-region" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:100; align-items:center; justify-content:center; padding:16px;">
+        <div style="background:#121215; border:1px solid #27272a; border-radius:10px; width:100%; max-width:440px; padding:22px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.6);" onclick="event.stopPropagation()">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="margin:0; font-size:16px; font-weight:800; color:#f4f4f5;">Add Region</h3>
+            <button type="button" onclick="closeAdminModal('region')" style="background:none; border:none; color:#71717a; font-size:18px; cursor:pointer;">✕</button>
+          </div>
+          <form onsubmit="handleAddRegionSubmit(event)" style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">REGION CODE *</label>
+              <input type="text" id="modal-reg-code" placeholder="e.g. GJ or KPS1" required style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px; font-family:monospace;" />
+            </div>
+            <div>
+              <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">REGION NAME *</label>
+              <input type="text" id="modal-reg-name" placeholder="e.g. Gujarat SLDC" required style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;" />
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div>
+                <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">REGION TYPE</label>
+                <select id="modal-reg-type" style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;">
+                  <option value="State">State</option>
+                  <option value="ISTS">ISTS</option>
+                  <option value="Pooling Station">Pooling Station</option>
+                  <option value="Grid">Grid</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">PARENT GRID</label>
+                <select id="modal-reg-grid" style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;">
+                  <option value="WR">WR (Western Region)</option>
+                  <option value="NR">NR (Northern Region)</option>
+                  <option value="SR">SR (Southern Region)</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style="display:block; font-size:10px; font-weight:700; color:#a1a1aa; text-transform:uppercase; margin-bottom:4px;">CAPACITY (MW)</label>
+              <input type="number" id="modal-reg-capacity" placeholder="5000" style="width:100%; background:#18181b; color:#f4f4f5; border:1px solid #27272a; border-radius:6px; padding:7px 10px; font-size:11px;" />
+            </div>
+            <button type="submit" style="margin-top:8px; width:100%; background:#10b981; color:#000000; border:none; border-radius:6px; padding:9px; font-size:12px; font-weight:800; cursor:pointer;">
+              Add Region
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- MODAL 4: MAINTENANCE MODE CONFIRMATION -->
+      <div id="modal-admin-maintenance" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:100; align-items:center; justify-content:center; padding:16px;">
+        <div style="background:#121215; border:1px solid #27272a; border-radius:10px; width:100%; max-width:420px; padding:20px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.6);" onclick="event.stopPropagation()">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="margin:0; font-size:15px; font-weight:800; color:#f4f4f5;" id="modal-maint-title">Toggle System Maintenance</h3>
+            <button type="button" onclick="closeAdminModal('maintenance')" style="background:none; border:none; color:#71717a; font-size:18px; cursor:pointer;">✕</button>
+          </div>
+          <p style="font-size:12px; color:#a1a1aa; line-height:1.5; margin:0 0 16px 0;" id="modal-maint-desc">
+            Enabling maintenance mode will terminate non-admin websockets and show a temporary maintenance notification to external grid operators.
+          </p>
+          <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button type="button" onclick="closeAdminModal('maintenance')" style="background:#27272a; color:#f4f4f5; border:none; border-radius:6px; padding:8px 14px; font-size:11px; font-weight:600; cursor:pointer;">Cancel</button>
+            <button type="button" onclick="confirmMaintenanceToggle()" id="modal-maint-confirm-btn" style="background:#ef4444; color:#ffffff; border:none; border-radius:6px; padding:8px 14px; font-size:11px; font-weight:700; cursor:pointer;">Confirm Activate</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL 5: COVERAGE TELEMETRY INSPECTOR -->
+      <div id="modal-admin-inspect" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:100; align-items:center; justify-content:center; padding:16px;">
+        <div style="background:#121215; border:1px solid #27272a; border-radius:10px; width:100%; max-width:500px; padding:20px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.6);" onclick="event.stopPropagation()">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <div>
+              <h3 style="margin:0; font-size:15px; font-weight:800; color:#f4f4f5;">Telemetry Block Inspector</h3>
+              <span style="font-size:11px; color:#f59e0b; font-family:monospace;" id="inspect-plant-title">ACL_PSS3_KPS1_S</span>
+            </div>
+            <button type="button" onclick="closeAdminModal('inspect')" style="background:none; border:none; color:#71717a; font-size:18px; cursor:pointer;">✕</button>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; font-size:11px;">
+            <div style="padding:8px; background:#18181b; border-radius:6px;">
+              <span style="color:#71717a;">Date:</span>
+              <div style="font-weight:700; color:#f4f4f5; font-family:monospace;" id="inspect-date">19-10-2026</div>
+            </div>
+            <div style="padding:8px; background:#18181b; border-radius:6px;">
+              <span style="color:#71717a;">Region:</span>
+              <div style="font-weight:700; color:#f4f4f5;" id="inspect-region">GJ SLDC</div>
+            </div>
+            <div style="padding:8px; background:#18181b; border-radius:6px;">
+              <span style="color:#71717a;">Coverage:</span>
+              <div style="font-weight:700; color:#f4f4f5; font-family:monospace;" id="inspect-cov">96 / 96 (100%)</div>
+            </div>
+            <div style="padding:8px; background:#18181b; border-radius:6px;">
+              <span style="color:#71717a;">Status:</span>
+              <div style="font-weight:700; color:#10b981;" id="inspect-status">NORMAL</div>
+            </div>
+          </div>
+          <div style="padding:10px; background:#18181b; border-radius:6px; border:1px solid #27272a; margin-bottom:16px;">
+            <div style="font-size:10px; font-weight:700; color:#71717a; text-transform:uppercase; margin-bottom:6px;">Simulated 96-Block Telemetry Heatmap</div>
+            <div id="inspect-heatmap-grid" style="display:grid; grid-template-columns:repeat(24, 1fr); gap:2px; height:16px;"></div>
+            <div style="display:flex; justify-content:space-between; font-size:9px; color:#71717a; margin-top:4px;">
+              <span>00:00</span><span>12:00</span><span>23:45</span>
+            </div>
+          </div>
+          <button type="button" onclick="closeAdminModal('inspect')" style="width:100%; background:#10b981; color:#000000; border:none; border-radius:6px; padding:8px; font-size:12px; font-weight:700; cursor:pointer;">
+            Close Inspector
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- ======================================================= -->
+    <!-- VIEW C: LOGIN VIEW                                      -->
+    <!-- ======================================================= -->
+    <div id="view-login" style="display:none; width:100%; min-height:80vh; align-items:center; justify-content:center; background:#000000;">
+      <div style="width:100%; max-width:400px; background:#0c0c0e; border:1px solid #1f1f23; border-radius:12px; padding:28px 24px; box-shadow:0 8px 32px rgba(0,0,0,0.8);">
+        <div style="display:flex; justify-content:center; align-items:center; gap:16px; margin-bottom:20px;">
+          <img src="public/images/iitb.jpg" alt="IITB" style="width:44px; height:44px; border-radius:50%; object-fit:contain; background:#ffffff;" onerror="this.src='../Day 2/public/images/iitb.jpg'" />
+          <div style="height:36px; width:110px; background:#ffffff; border-radius:6px; padding:2px 8px; display:flex; align-items:center; justify-content:center;">
+            <img src="public/images/grid_india.png" alt="GRID-INDIA" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.src='../Day 2/public/images/grid_india.png'" />
+          </div>
+        </div>
+        <h2 style="font-size:16px; font-weight:800; color:#ffffff; text-align:center; margin-bottom:4px;">Operator Portal Sign In</h2>
+        <p style="font-size:10px; color:#71717a; text-align:center; margin-bottom:20px;">GRID-INDIA IITB Renewable Energy Forecasting Platform</p>
+        
+        <form onsubmit="handleLoginSubmit(event)" style="display:flex; flex-direction:column; gap:12px;">
+          <div>
+            <label class="ctrl-label">Username / Operator ID</label>
+            <input type="text" value="admin@grid-iitb.ac.in" class="ctrl-input" style="height:32px;" required />
+          </div>
+          <div>
+            <label class="ctrl-label">Password</label>
+            <input type="password" value="••••••••••••" class="ctrl-input" style="height:32px;" required />
+          </div>
+          <button type="submit" style="background:#ea580c; color:#ffffff; border:none; border-radius:6px; padding:8px; font-size:12px; font-weight:800; cursor:pointer; margin-top:8px;">
+            Sign In to Dashboard
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Discreet Floating View Switcher (Bottom-Left) -->
+  <div id="quick-view-toggle">
+    <span style="color:#71717a; font-weight:800;">PORTAL:</span>
+    <button id="btn-view-dash" class="active-v" onclick="switchView('dashboard')">Live Dashboard</button>
+    <button id="btn-view-admin" onclick="switchView('admin')">Admin</button>
+    <button id="btn-view-login" onclick="switchView('login')">Login</button>
+    <span style="color:#27272a;">|</span>
+    <button onclick="toggleTheme()">☀️/🌙</button>
+  </div>
+
+  <!-- Leaflet JS for Map Rendering -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <script>
+    // State Models
+    let isCorrectedMode = false;
+    let mapInstance = null;
+    let plantMarkersLayer = null;
+
+    // Plant Coordinates & Metadata
+    const PLANT_REGISTRY = {
+      'AGE24AL_PSS3_KPS1_S': {
+        name: 'AGE24AL_PSS3_KPS1_S',
+        displayName: 'AGE24AL_PSS3___',
+        station: 'Khavda PSS-1',
+        category: 'ISTS',
+        ic: '400.0 MW',
+        lat: 23.85,
+        lon: 69.85,
+        region: 'Western Region'
+      },
+      'CHARANKA_SOLAR_PARK': {
+        name: 'CHARANKA_SOLAR_PARK',
+        displayName: 'CHARANKA_SOLAR_PARK',
+        station: 'Charanka PSS',
+        category: 'State',
+        ic: '600.0 MW',
+        lat: 23.90,
+        lon: 71.20,
+        region: 'Western Region'
+      },
+      'BHADLA_SOLAR_PARK': {
+        name: 'BHADLA_SOLAR_PARK',
+        displayName: 'BHADLA_SOLAR_PARK',
+        station: 'Bhadla PSS',
+        category: 'ISTS',
+        ic: '2245.0 MW',
+        lat: 27.53,
+        lon: 71.91,
+        region: 'Northern Region'
+      },
+      '220_33KV_BAKTAPUR': {
+        name: '220_33KV_BAKTAPUR',
+        displayName: '220_33KV_BAKTAPUR',
+        station: 'Baktapur PSS',
+        category: 'State',
+        ic: '278.0 MW',
+        lat: 22.19,
+        lon: 76.25,
+        region: 'Western Region'
+      },
+      '400KV_NAGDA': {
+        name: '400KV_NAGDA',
+        displayName: '400KV_NAGDA',
+        station: 'Nagda PSS',
+        category: 'State',
+        ic: '85.0 MW',
+        lat: 23.42,
+        lon: 75.47,
+        region: 'Western Region'
+      }
+    };
+
+    // 1. Initial Table Data Population (20 Rows matching Screenshot 2)
+    function populateTable() {
+      const tbody = document.getElementById('telemetry-table-rows');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const pl = document.getElementById('sel-plant').value;
+      const plantLabel = pl === 'All Plants' ? '1698 plants' : pl;
+
+      for (let i = 0; i < 20; i++) {
+        const totalMinutes = i * 15;
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        const timeStr = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+        const isAlt = i % 2 === 1;
+
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #1c1c20';
+        if (isAlt) tr.style.background = 'rgba(255, 255, 255, 0.015)';
+
+        tr.innerHTML = `
+          <td style="padding:7px 12px; color:#e4e4e7; font-weight:600;">${plantLabel}</td>
+          <td style="padding:7px 12px; color:#a1a1aa; font-family:monospace;">18-10-2026 ${timeStr}</td>
+          <td style="padding:7px 12px;"><span style="color:#f59e0b; font-size:9.5px; font-weight:700;">latest</span></td>
+          <td style="padding:7px 12px; color:#a1a1aa; font-family:monospace;">0.00</td>
+          <td style="padding:7px 12px; color:#38bdf8; font-family:monospace;">-</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // 2. Real Leaflet India Map Initialization with Interactive Pins
+    function initMap() {
+      const mapContainer = document.getElementById('interactive-india-map');
+      if (!mapContainer || mapInstance) return;
+
+      // Start centered on Kutch / Western India matching Screenshot 3
+      mapInstance = L.map('interactive-india-map', {
+        center: [23.85, 69.85],
+        zoom: 8.8,
+        zoomControl: true,
+        attributionControl: true
+      });
+
+      // Light OpenStreetMap Carto Tiles matching Screenshots
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: 'Leaflet | &copy; OpenStreetMap contributors'
+      }).addTo(mapInstance);
+
+      // Top-Right Layers Button
+      const LayersBtn = L.Control.extend({
+        options: { position: 'topright' },
+        onAdd: function() {
+          const div = L.DomUtil.create('div', 'leaflet-bar');
+          div.style.background = '#ffffff';
+          div.style.width = '30px';
+          div.style.height = '30px';
+          div.style.display = 'flex';
+          div.style.alignItems = 'center';
+          div.style.justifyContent = 'center';
+          div.style.cursor = 'pointer';
+          div.style.boxShadow = '0 1px 5px rgba(0,0,0,0.4)';
+          div.innerHTML = '<span style="font-size:15px;">🥞</span>';
+          div.title = 'Layers';
+          return div;
+        }
+      });
+      mapInstance.addControl(new LayersBtn());
+
+      plantMarkersLayer = L.layerGroup().addTo(mapInstance);
+      updateMapPins();
+
+      setTimeout(() => { mapInstance.invalidateSize(); }, 250);
+    }
+
+    // Render Markers on Map: selected plant is GREEN, others are ORANGE
+    function updateMapPins() {
+      if (!mapInstance || !plantMarkersLayer) return;
+      plantMarkersLayer.clearLayers();
+
+      const selectedPlant = document.getElementById('sel-plant').value;
+
+      // Pooling stations and plants around Kutch/Khavda matching Screenshot 3
+      const khavdaCluster = [
+        { id: 'AGE24AL_PSS3_KPS1_S', lat: 23.85, lon: 69.85, name: 'AGE24AL_PSS3_KPS1_S (400 MW)', isKPS: true },
+        { id: 'KPS_2', lat: 23.88, lon: 69.80, name: 'Khavda PSS-2 Pool (300 MW)' },
+        { id: 'KPS_3', lat: 23.82, lon: 69.90, name: 'KPS Pooling Station 3 (600 MW)' },
+        { id: 'KPS_4', lat: 23.92, lon: 69.88, name: 'Khavda Renewable Energy Park 4' },
+        { id: 'KPS_5', lat: 23.80, lon: 69.82, name: 'KPS Substation 5 (250 MW)' },
+        { id: 'KPS_6', lat: 23.87, lon: 69.94, name: 'NTPC Khavda Node (500 MW)' },
+        { id: 'KPS_7', lat: 23.75, lon: 69.78, name: 'Coastal Solar Bay (150 MW)' },
+        { id: 'CHARANKA_SOLAR_PARK', lat: 23.90, lon: 71.20, name: 'CHARANKA_SOLAR_PARK (600 MW)' },
+        { id: 'BHADLA_SOLAR_PARK', lat: 27.53, lon: 71.91, name: 'BHADLA_SOLAR_PARK (2245 MW)' },
+        { id: '220_33KV_BAKTAPUR', lat: 22.19, lon: 76.25, name: '220_33KV_BAKTAPUR (278 MW)' },
+        { id: '400KV_NAGDA', lat: 23.42, lon: 75.47, name: '400KV_NAGDA (85 MW)' }
+      ];
+
+      khavdaCluster.forEach(pt => {
+        const isSelected = pt.id === selectedPlant;
+
+        if (isSelected) {
+          // GREEN ACTIVE BEACON PIN matching Screenshot 3
+          const greenIcon = L.divIcon({
+            className: 'green-beacon-container',
+            html: `
+              <div style="position:relative; width:22px; height:22px; display:flex; align-items:center; justify-content:center;">
+                <div class="green-pulse-pin" style="position:absolute; width:20px; height:20px; border-radius:50%; background:rgba(16, 185, 129, 0.45); border:1.5px solid #10b981;"></div>
+                <div style="width:12px; height:12px; border-radius:50%; background:#10b981; border:2px solid #ffffff; box-shadow:0 0 8px rgba(16,185,129,0.9); z-index:10;"></div>
+              </div>
+            `,
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
+          });
+
+          const m = L.marker([pt.lat, pt.lon], { icon: greenIcon }).addTo(plantMarkersLayer);
+          m.bindPopup(`<strong>${pt.name}</strong><br><span style="color:#10b981; font-weight:700;">● Active Selected Telemetry Node</span>`);
+        } else {
+          // ORANGE CIRCLE MARKER matching Screenshot 1 & 3
+          const m = L.circleMarker([pt.lat, pt.lon], {
+            radius: 6,
+            fillColor: '#f59e0b',
+            color: '#ffffff',
+            weight: 1.5,
+            opacity: 0.9,
+            fillOpacity: 0.85
+          }).addTo(plantMarkersLayer);
+
+          m.bindPopup(`<strong>${pt.name}</strong><br>Click to focus on this node`);
+          m.on('click', () => {
+            if (PLANT_REGISTRY[pt.id]) {
+              document.getElementById('sel-plant').value = pt.id;
+              onPlantChange();
+            }
+          });
+        }
+      });
+    }
+
+    // 3. Dynamic Controls Handling (Category: State vs ISTS)
+    function onCategoryChange() {
+      const cat = document.getElementById('sel-cat').value;
+      const lblCol = document.getElementById('lbl-dyn-col');
+      const selCol = document.getElementById('sel-dyn-col');
+      const sumRegionLabel = document.getElementById('lbl-sum-region-or-station');
+      const sumRegionVal = document.getElementById('sum-region');
+      const sumPlantLabel = document.getElementById('lbl-sum-p');
+
+      if (cat === 'ISTS') {
+        lblCol.innerText = 'Pooling Station';
+        selCol.innerHTML = `
+          <option value="All Pooling Stations" selected>All Pooling Stations</option>
+          <option value="Khavda PSS-1">Khavda PSS-1</option>
+          <option value="Fatehgarh PSS-2">Fatehgarh PSS-2</option>
+          <option value="Bhadla PSS">Bhadla PSS</option>
+          <option value="Nagda PSS">Nagda PSS</option>
+        `;
+        sumRegionLabel.innerText = 'REGION: ';
+        sumRegionVal.innerText = '—';
+        sumPlantLabel.innerText = 'STATION: ';
+        document.getElementById('sum-plant').innerText = 'All Pooling Stations';
+        document.getElementById('subtext-daterange').innerText = '2026 08 25 — 2026 10 18-56 dates';
+        document.getElementById('sel-plant').value = 'AGE24AL_PSS3_KPS1_S';
+        document.getElementById('sel-mode').value = 'Intra';
+        document.getElementById('sum-mode').innerText = 'Intra';
+      } else {
+        lblCol.innerText = 'State';
+        selCol.innerHTML = `
+          <option value="All States" selected>All States</option>
+          <option value="Maharashtra">Maharashtra</option>
+          <option value="Gujarat">Gujarat</option>
+          <option value="Madhya Pradesh">Madhya Pradesh</option>
+          <option value="Rajasthan">Rajasthan</option>
+        `;
+        sumRegionLabel.innerText = 'REGION: ';
+        sumRegionVal.innerText = 'All States';
+        sumPlantLabel.innerText = 'PLANT: ';
+        document.getElementById('sel-plant').value = 'All Plants';
+        document.getElementById('sum-plant').innerText = 'All Plants';
+        document.getElementById('sel-mode').value = 'Nowcasting';
+        document.getElementById('sum-mode').innerText = 'Nowcasting';
+        document.getElementById('subtext-daterange').innerText = '2025-08-29 -> 2026-10-18: 51 dates';
+      }
+      onFilterParamChange();
+      onPlantChange();
+    }
+
+    // 4. Plant Selection Change
+    function onPlantChange() {
+      const pl = document.getElementById('sel-plant').value;
+      const isSinglePlant = pl !== 'All Plants';
+      const liveSolarSubcard = document.getElementById('subcard-live-solar');
+
+      // Update Selection Summary
+      if (document.getElementById('sel-cat').value === 'State') {
+        document.getElementById('sum-plant').innerText = pl;
+      }
+
+      // Update Upcoming Forecast Times
+      const t0Time = document.getElementById('slot-t0-time');
+      const t1Time = document.getElementById('slot-t1-time');
+      const t2Time = document.getElementById('slot-t2-time');
+      const t3Time = document.getElementById('slot-t3-time');
+
+      // Update Forecast Context Card (Single Plant mode vs States table) & Card 3
+      const ctxBody = document.getElementById('context-body');
+      if (isSinglePlant) {
+        if (liveSolarSubcard) liveSolarSubcard.style.display = 'flex';
+        if (t0Time) {
+          t0Time.innerText = '00:00';
+          t1Time.innerText = '00:15';
+          t2Time.innerText = '00:30';
+          t3Time.innerText = '00:45';
+        }
+
+        const meta = PLANT_REGISTRY[pl] || { name: pl, ic: '400.0 MW' };
+        ctxBody.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:3px; font-size:9px;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="color:#71717a;">Plant:</span>
+              <strong style="color:#ffffff; font-size:8.5px; font-family:monospace;">${meta.name}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="color:#71717a;">Installed Capacity:</span>
+              <strong style="color:#ffffff; font-size:10px; font-family:monospace;">${meta.ic}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="color:#71717a;">Forecasting Type:</span>
+              <strong style="color:#ffffff;">${document.getElementById('sel-mode').value === 'Intra' ? 'Intraday' : 'Nowcasting'}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="color:#71717a;">Revision:</span>
+              <strong style="color:#ffffff;">Till Latest</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="color:#71717a;">Time Range:</span>
+              <div style="text-align:right; font-size:8px; color:#ffffff;">
+                Oct 18, 08:30<br>
+                <span style="color:#f59e0b;">➔ Oct 21, 05:15</span>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid #1f1f23; padding-top:2px;">
+              <span style="color:#71717a;">Run Time:</span>
+              <span style="color:#a1a1aa; font-size:8.5px;">Oct 18, 08:30</span>
+            </div>
+          </div>
+        `;
+        
+        // Pan & Zoom Map to plant
+        if (mapInstance && meta.lat && meta.lon) {
+          mapInstance.setView([meta.lat, meta.lon], 9.5);
+        }
+      } else {
+        if (liveSolarSubcard) liveSolarSubcard.style.display = 'none';
+        if (t0Time) {
+          t0Time.innerText = '22:45';
+          t1Time.innerText = '23:00';
+          t2Time.innerText = '23:15';
+          t3Time.innerText = '23:30';
+        }
+
+        // States Table matching Screenshot 1
+        ctxBody.innerHTML = `
+          <table style="width:100%; border-collapse:collapse; font-size:9px; margin-bottom:4px;">
+            <thead>
+              <tr style="color:#71717a; border-bottom:1px solid #27272a; text-align:left;">
+                <th style="padding-bottom:2px; font-weight:600;">States</th>
+                <th style="padding-bottom:2px; font-weight:600; text-align:center;">Plants</th>
+                <th style="padding-bottom:2px; font-weight:600; text-align:right;">IC</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="color:#d4d4d8;">
+                <td style="padding-top:2px;">GJ</td>
+                <td style="padding-top:2px; text-align:center;">1483</td>
+                <td style="padding-top:2px; text-align:right; font-family:monospace;">17220.1 MW</td>
+              </tr>
+              <tr style="color:#d4d4d8;">
+                <td>MH</td>
+                <td style="text-align:center;">121</td>
+                <td style="text-align:right; font-family:monospace;">7057.3 MW</td>
+              </tr>
+              <tr style="color:#d4d4d8;">
+                <td>MP</td>
+                <td style="text-align:center;">94</td>
+                <td style="text-align:right; font-family:monospace;">2387.8 MW</td>
+              </tr>
+              <tr style="color:#ffffff; font-weight:700; border-top:1px solid #27272a;">
+                <td style="padding-top:2px;">Total</td>
+                <td style="padding-top:2px; text-align:center;">1698</td>
+                <td style="padding-top:2px; text-align:right; font-family:monospace;">26665.2 MW</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="display:flex; flex-direction:column; gap:2px; font-size:8.5px; border-top:1px solid #1f1f23; padding-top:4px;">
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:#71717a;">Forecasting Type:</span>
+              <strong style="color:#ffffff;">Nowcasting</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:#71717a;">Revision:</span>
+              <strong style="color:#ffffff;">Till Latest</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:#71717a;">Time Range:</span>
+              <span style="color:#ffffff; font-weight:600; text-align:right;">Oct 18, 00:00<br><span style="color:#71717a; font-weight:400;">Oct 18, 23:45</span></span>
+            </div>
+          </div>
+        `;
+        if (mapInstance) {
+          mapInstance.setView([23.2, 75.8], 5.3);
+        }
+      }
+
+      updateMapPins();
+      renderCharts();
+      populateTable();
+    }
+
+    // 5. Mode Change (Intra vs Nowcasting)
+    function onModeChange() {
+      const md = document.getElementById('sel-mode').value;
+      document.getElementById('sum-mode').innerText = md;
+      renderCharts();
+    }
+
+    // 6. Generic Parameter Change
+    function onFilterParamChange() {
+      document.getElementById('sum-gen').innerText = document.getElementById('sel-gen').value;
+      document.getElementById('sum-grid').innerText = document.getElementById('sel-region').value;
+      document.getElementById('sum-cat').innerText = document.getElementById('sel-cat').value;
+      document.getElementById('sum-date').innerText = document.getElementById('sel-date').value;
+      document.getElementById('sum-rev').innerText = document.getElementById('sel-rev').value.includes('Latest') ? 'Latest' : document.getElementById('sel-rev').value;
+    }
+
+    // 7. Graph Toggle: Original vs Corrected
+    function setGraphCorrection(corr) {
+      isCorrectedMode = corr;
+      document.getElementById('btn-orig').className = 'graph-pill-btn' + (!corr ? ' active' : '');
+      document.getElementById('btn-corr').className = 'graph-pill-btn' + (corr ? ' active' : '');
+      renderCharts();
+    }
+
+    // 8. Render Dual Charts dynamically (Intra Multi-Day Horizon vs Nowcasting Single Day)
+    function renderCharts() {
+      const mode = document.getElementById('sel-mode').value;
+      const ghiContainer = document.getElementById('ghi-chart-container');
+      const solarContainer = document.getElementById('solar-chart-container');
+      const flaggedLegend = document.getElementById('legend-flagged-item');
+
+      if (mode === 'Intra') {
+        // MULTI-DAY HORIZON (Oct 18 12:00 -> Oct 21 00:00) MATCHING SCREENSHOT 3
+        flaggedLegend.style.display = 'flex';
+
+        // GHI SVG: 3 distinct bell peaks
+        ghiContainer.innerHTML = `
+          <svg viewBox="0 0 720 155" style="width:100%; height:auto; display:block;">
+            <defs>
+              <linearGradient id="ghiGrad3Day" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#f59e0b" stop-opacity="${isCorrectedMode ? '0.5' : '0.4'}" />
+                <stop offset="60%" stop-color="#f59e0b" stop-opacity="0.1" />
+                <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            <!-- Grid Lines & Y Numbers (1000.00, 750.00, 500.00, 250.00, 0.00) -->
+            <line x1="48" y1="15" x2="700" y2="15" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="18" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">1000.00</text>
+            <line x1="48" y1="41" x2="700" y2="41" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="44" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">750.00</text>
+            <line x1="48" y1="67" x2="700" y2="67" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="70" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">500.00</text>
+            <line x1="48" y1="93" x2="700" y2="93" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="96" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">250.00</text>
+            <line x1="48" y1="120" x2="700" y2="120" stroke="#27272a" stroke-width="1" />
+            <text x="42" y="123" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">0.00</text>
+
+            <!-- 3 Bell Peaks: Peak 1 (Day 1 X=110 Y=38), Peak 2 (Day 2 X=350 Y=30), Peak 3 (Day 3 X=570 Y=32) -->
+            <path d="M 48 120 L 60 120 C 75 110, 95 40, 115 38 C 135 40, 155 110, 175 120 L 290 120 C 310 110, 330 32, 350 30 C 370 32, 395 110, 415 120 L 510 120 C 530 110, 550 34, 570 32 C 590 34, 615 110, 635 120 L 700 120 L 700 120 L 48 120 Z" fill="url(#ghiGrad3Day)" />
+            <path d="M 48 120 L 60 120 C 75 110, 95 40, 115 38 C 135 40, 155 110, 175 120 L 290 120 C 310 110, 330 32, 350 30 C 370 32, 395 110, 415 120 L 510 120 C 530 110, 550 34, 570 32 C 590 34, 615 110, 635 120 L 700 120" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" />
+
+            <!-- Multi-Day X Labels (Oct 18 12:00, Oct 19 00:00, Oct 19 12:00, Oct 20 00:00, Oct 20 12:00, Oct 21 00:00) -->
+            <g font-size="7.5" fill="#71717a" font-family="monospace" text-anchor="end">
+              <text x="115" y="132" transform="rotate(-45 115 132)">Oct 18 12:00</text>
+              <text x="230" y="132" transform="rotate(-45 230 132)">Oct 19 00:00</text>
+              <text x="350" y="132" transform="rotate(-45 350 132)">Oct 19 12:00</text>
+              <text x="460" y="132" transform="rotate(-45 460 132)">Oct 20 00:00</text>
+              <text x="570" y="132" transform="rotate(-45 570 132)">Oct 20 12:00</text>
+              <text x="680" y="132" transform="rotate(-45 680 132)">Oct 21 00:00</text>
+            </g>
+          </svg>
+        `;
+
+        // Solar SVG: 3 Peaks, Flagged anomaly column, Y: 380, 285, 190, 95, 0.00
+        solarContainer.innerHTML = `
+          <svg viewBox="0 0 720 155" style="width:100%; height:auto; display:block;">
+            <defs>
+              <linearGradient id="solarGrad3Day" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35" />
+                <stop offset="60%" stop-color="#38bdf8" stop-opacity="0.08" />
+                <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            <!-- Grid Lines & Y Numbers (380.00, 285.00, 190.00, 95.00, 0.00) -->
+            <line x1="48" y1="15" x2="700" y2="15" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="18" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">380.00</text>
+            <line x1="48" y1="41" x2="700" y2="41" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="44" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">285.00</text>
+            <line x1="48" y1="67" x2="700" y2="67" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="70" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">190.00</text>
+            <line x1="48" y1="93" x2="700" y2="93" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="96" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">95.00</text>
+            <line x1="48" y1="120" x2="700" y2="120" stroke="#27272a" stroke-width="1" />
+            <text x="42" y="123" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">0.00</text>
+
+            <!-- Red Flagged Data Anomaly Column on Day 1 matching Screenshot 3 -->
+            <rect x="105" y="18" width="18" height="102" fill="rgba(239, 68, 68, 0.22)" stroke="#ef4444" stroke-dasharray="2,2" stroke-width="0.8" />
+
+            <!-- Cyan Area Fill for Predicted -->
+            <path d="M 48 120 L 60 120 C 75 110, 95 45, 115 42 C 135 45, 155 110, 175 120 L 290 120 C 310 110, 330 40, 350 38 C 370 40, 395 110, 415 120 L 510 120 C 530 110, 550 42, 570 40 C 590 42, 615 110, 635 120 L 700 120 L 700 120 L 48 120 Z" fill="url(#solarGrad3Day)" />
+            <!-- Cyan Predicted Curve -->
+            <path d="M 48 120 L 60 120 C 75 110, 95 45, 115 42 C 135 45, 155 110, 175 120 L 290 120 C 310 110, 330 40, 350 38 C 370 40, 395 110, 415 120 L 510 120 C 530 110, 550 42, 570 40 C 590 42, 615 110, 635 120 L 700 120" fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" />
+
+            <!-- Green Actual Curve on Day 1 (higher curve with dashed cap) -->
+            <path d="M 50 120 L 62 120 C 72 80, 85 28, 110 26 C 122 26, 135 48, 145 120" fill="none" stroke="#10b981" stroke-width="1.8" stroke-dasharray="3,2" stroke-linecap="round" />
+
+            <!-- Multi-Day X Labels -->
+            <g font-size="7.5" fill="#71717a" font-family="monospace" text-anchor="end">
+              <text x="115" y="132" transform="rotate(-45 115 132)">Oct 18 12:00</text>
+              <text x="230" y="132" transform="rotate(-45 230 132)">Oct 19 00:00</text>
+              <text x="350" y="132" transform="rotate(-45 350 132)">Oct 19 12:00</text>
+              <text x="460" y="132" transform="rotate(-45 460 132)">Oct 20 00:00</text>
+              <text x="570" y="132" transform="rotate(-45 570 132)">Oct 20 12:00</text>
+              <text x="680" y="132" transform="rotate(-45 680 132)">Oct 21 00:00</text>
+            </g>
+          </svg>
+        `;
+      } else {
+        // 24-HOUR SINGLE DAY VIEW (00:00 -> 23:00) MATCHING SCREENSHOT 1
+        flaggedLegend.style.display = 'none';
+
+        ghiContainer.innerHTML = `
+          <svg viewBox="0 0 720 155" style="width:100%; height:auto; display:block;">
+            <defs>
+              <linearGradient id="ghiGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.4" />
+                <stop offset="60%" stop-color="#f59e0b" stop-opacity="0.1" />
+                <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            <line x1="48" y1="15" x2="700" y2="15" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="18" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">1000.00</text>
+            <line x1="48" y1="41" x2="700" y2="41" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="44" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">750.00</text>
+            <line x1="48" y1="67" x2="700" y2="67" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="70" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">500.00</text>
+            <line x1="48" y1="93" x2="700" y2="93" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="96" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">250.00</text>
+            <line x1="48" y1="120" x2="700" y2="120" stroke="#27272a" stroke-width="1" />
+            <text x="42" y="123" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">0.00</text>
+
+            <path d="M 48 120 L 218 120 C 260 115, 330 22, 388 20 C 446 22, 516 115, 559 120 L 700 120 L 700 120 L 48 120 Z" fill="url(#ghiGrad)" />
+            <path d="M 48 120 L 218 120 C 260 115, 330 22, 388 20 C 446 22, 516 115, 559 120 L 700 120" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+
+            <g font-size="6.5" fill="#71717a" font-family="monospace" text-anchor="end">
+              <text x="48" y="132" transform="rotate(-45 48 132)">00:00</text>
+              <text x="76" y="132" transform="rotate(-45 76 132)">01:00</text>
+              <text x="104" y="132" transform="rotate(-45 104 132)">02:00</text>
+              <text x="133" y="132" transform="rotate(-45 133 132)">03:00</text>
+              <text x="161" y="132" transform="rotate(-45 161 132)">04:00</text>
+              <text x="189" y="132" transform="rotate(-45 189 132)">05:00</text>
+              <text x="218" y="132" transform="rotate(-45 218 132)">06:00</text>
+              <text x="246" y="132" transform="rotate(-45 246 132)">07:00</text>
+              <text x="274" y="132" transform="rotate(-45 274 132)">08:00</text>
+              <text x="303" y="132" transform="rotate(-45 303 132)">09:00</text>
+              <text x="331" y="132" transform="rotate(-45 331 132)">10:00</text>
+              <text x="360" y="132" transform="rotate(-45 360 132)">11:00</text>
+              <text x="388" y="132" transform="rotate(-45 388 132)">12:00</text>
+              <text x="416" y="132" transform="rotate(-45 416 132)">13:00</text>
+              <text x="445" y="132" transform="rotate(-45 445 132)">14:00</text>
+              <text x="473" y="132" transform="rotate(-45 473 132)">15:00</text>
+              <text x="502" y="132" transform="rotate(-45 502 132)">16:00</text>
+              <text x="530" y="132" transform="rotate(-45 530 132)">17:00</text>
+              <text x="559" y="132" transform="rotate(-45 559 132)">18:00</text>
+              <text x="587" y="132" transform="rotate(-45 587 132)">19:00</text>
+              <text x="615" y="132" transform="rotate(-45 615 132)">20:00</text>
+              <text x="644" y="132" transform="rotate(-45 644 132)">21:00</text>
+              <text x="672" y="132" transform="rotate(-45 672 132)">22:00</text>
+              <text x="700" y="132" transform="rotate(-45 700 132)">23:00</text>
+            </g>
+          </svg>
+        `;
+
+        solarContainer.innerHTML = `
+          <svg viewBox="0 0 720 155" style="width:100%; height:auto; display:block;">
+            <defs>
+              <linearGradient id="solarGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35" />
+                <stop offset="60%" stop-color="#38bdf8" stop-opacity="0.08" />
+                <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            <line x1="48" y1="15" x2="700" y2="15" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="18" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">2000.00</text>
+            <line x1="48" y1="41" x2="700" y2="41" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="44" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">1500.00</text>
+            <line x1="48" y1="67" x2="700" y2="67" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="70" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">1000.00</text>
+            <line x1="48" y1="93" x2="700" y2="93" stroke="#1f1f23" stroke-width="1" />
+            <text x="42" y="96" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">500.00</text>
+            <line x1="48" y1="120" x2="700" y2="120" stroke="#27272a" stroke-width="1" />
+            <text x="42" y="123" text-anchor="end" fill="#71717a" font-size="7.5" font-family="monospace">0.00</text>
+
+            <path d="M 48 120 L 218 120 C 260 114, 330 25, 388 22 C 446 25, 516 114, 559 120 L 700 120 L 700 120 L 48 120 Z" fill="url(#solarGrad)" />
+            <path d="M 48 120 L 218 120 C 260 114, 330 25, 388 22 C 446 25, 516 114, 559 120 L 700 120" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M 48 120 L 218 120 C 260 115, 330 27, 388 24" fill="none" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+
+            <g font-size="6.5" fill="#71717a" font-family="monospace" text-anchor="end">
+              <text x="48" y="132" transform="rotate(-45 48 132)">00:00</text>
+              <text x="76" y="132" transform="rotate(-45 76 132)">01:00</text>
+              <text x="104" y="132" transform="rotate(-45 104 132)">02:00</text>
+              <text x="133" y="132" transform="rotate(-45 133 132)">03:00</text>
+              <text x="161" y="132" transform="rotate(-45 161 132)">04:00</text>
+              <text x="189" y="132" transform="rotate(-45 189 132)">05:00</text>
+              <text x="218" y="132" transform="rotate(-45 218 132)">06:00</text>
+              <text x="246" y="132" transform="rotate(-45 246 132)">07:00</text>
+              <text x="274" y="132" transform="rotate(-45 274 132)">08:00</text>
+              <text x="303" y="132" transform="rotate(-45 303 132)">09:00</text>
+              <text x="331" y="132" transform="rotate(-45 331 132)">10:00</text>
+              <text x="360" y="132" transform="rotate(-45 360 132)">11:00</text>
+              <text x="388" y="132" transform="rotate(-45 388 132)">12:00</text>
+              <text x="416" y="132" transform="rotate(-45 416 132)">13:00</text>
+              <text x="445" y="132" transform="rotate(-45 445 132)">14:00</text>
+              <text x="473" y="132" transform="rotate(-45 473 132)">15:00</text>
+              <text x="502" y="132" transform="rotate(-45 502 132)">16:00</text>
+              <text x="530" y="132" transform="rotate(-45 530 132)">17:00</text>
+              <text x="559" y="132" transform="rotate(-45 559 132)">18:00</text>
+              <text x="587" y="132" transform="rotate(-45 587 132)">19:00</text>
+              <text x="615" y="132" transform="rotate(-45 615 132)">20:00</text>
+              <text x="644" y="132" transform="rotate(-45 644 132)">21:00</text>
+              <text x="672" y="132" transform="rotate(-45 672 132)">22:00</text>
+              <text x="700" y="132" transform="rotate(-45 700 132)">23:00</text>
+            </g>
+          </svg>
+        `;
+      }
+    }
+
+    // 9. Apply to Dashboard Action
+    function applyDashboardFilters() {
+      onFilterParamChange();
+      onPlantChange();
+    }
+
+    // 10. View Switching
+    function switchView(view) {
+      document.getElementById('view-dashboard').style.display = view === 'dashboard' ? 'flex' : 'none';
+      document.getElementById('view-admin').style.display = view === 'admin' ? 'flex' : 'none';
+      document.getElementById('view-login').style.display = view === 'login' ? 'flex' : 'none';
+
+      document.getElementById('btn-view-dash').className = view === 'dashboard' ? 'active-v' : '';
+      document.getElementById('btn-view-admin').className = view === 'admin' ? 'active-v' : '';
+      document.getElementById('btn-view-login').className = view === 'login' ? 'active-v' : '';
+
+      if (view === 'dashboard' && mapInstance) {
+        setTimeout(() => { mapInstance.invalidateSize(); }, 150);
+      }
+      if (view === 'admin') {
+        switchAdminSection(adminState.currentSection || 'overview');
+      }
+    }
+
+    // 11. Theme Toggle
+    function toggleTheme() {
+      document.body.classList.toggle('light-mode');
+    }
+
+    // 12. Excel Export
+    function triggerDownload() {
+      const toast = document.getElementById('export-toast');
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 3500);
+    }
+
+    // =========================================================
+    // ADMIN PANEL JAVASCRIPT STATE & CONTROLLERS (6 VIEWS)
+    // =========================================================
+
+    const adminState = {
+      currentSection: 'overview',
+      maintenanceMode: false,
+      users: [
+        { id: 'u-1', username: 'admin', displayName: 'Super Admin', email: 'admin@grid-india.in', role: 'super_admin', status: 'active', assignedStates: ['CG', 'GJ', 'MP', 'MH'] },
+        { id: 'u-2', username: 'cg_admin', displayName: 'Chhattisgarh SLDC', email: 'cg_admin@sldc.cg.gov.in', role: 'admin', status: 'active', assignedStates: ['CG'] },
+        { id: 'u-3', username: 'gj_admin', displayName: 'Gujarat SLDC', email: 'gj_admin@getcosldc.com', role: 'admin', status: 'active', assignedStates: ['GJ'] },
+        { id: 'u-4', username: 'mp_admin', displayName: 'Madhya Pradesh SLDC', email: 'mp_admin@sldcmp.in', role: 'admin', status: 'active', assignedStates: ['MP'] },
+        { id: 'u-5', username: 'mh_admin', displayName: 'Maharashtra SLDC', email: 'mh_admin@mahasldc.in', role: 'admin', status: 'active', assignedStates: ['MH'] },
+      ],
+      plants: [
+        { id: 'p-1', code: 'ACL_PSS3_KPS1_S', name: 'Adani Solar Khavda 1', area: 'GJ', poolingStation: 'Khavda PS1', capacityMw: 300, genType: 'Solar', portalVisible: true, pipelineActive: true },
+        { id: 'p-2', code: 'AGE24AL_PSS3_KPS1_S', name: 'Adani Green Energy 24A', area: 'GJ', poolingStation: 'Khavda PS1', capacityMw: 250, genType: 'Solar', portalVisible: true, pipelineActive: true },
+        { id: 'p-3', code: 'AGEL_PSS1_KPS1_S', name: 'Adani Green Energy 1', area: 'GJ', poolingStation: 'Khavda PS1', capacityMw: 350, genType: 'Solar', portalVisible: true, pipelineActive: true },
+        { id: 'p-4', code: 'AHESL_PSS1_KPS1_S', name: 'Adani Hybrid Energy 1', area: 'GJ', poolingStation: 'Khavda PS1', capacityMw: 390, genType: 'Hybrid', portalVisible: true, pipelineActive: true },
+        { id: 'p-5', code: 'ARERJL_PSS1_KPS1_S', name: 'Adani RE Rajasthan 1', area: 'ISTS', poolingStation: 'Bhadla PS', capacityMw: 250, genType: 'Solar', portalVisible: true, pipelineActive: true },
+        { id: 'p-6', code: 'AUGEL_PSS2_KPS1_S', name: 'Adani Utility Green 2', area: 'GJ', poolingStation: 'Khavda PS2', capacityMw: 300, genType: 'Solar', portalVisible: true, pipelineActive: true },
+        { id: 'p-7', code: 'AVAADA_PAVAGADA_S', name: 'Avaada Pavagada Solar', area: 'ISTS', poolingStation: 'Pavagada PS', capacityMw: 150, genType: 'Solar', portalVisible: true, pipelineActive: true },
+        { id: 'p-8', code: 'BHADLA_NTPC_S', name: 'NTPC Bhadla Solar Plant', area: 'ISTS', poolingStation: 'Bhadla PS', capacityMw: 260, genType: 'Solar', portalVisible: true, pipelineActive: true },
+        { id: 'p-9', code: 'CHARANKA_GPCL_S', name: 'Charanka Solar Park', area: 'GJ', poolingStation: 'Charanka GIS', capacityMw: 600, genType: 'Solar', portalVisible: true, pipelineActive: true },
+        { id: 'p-10', code: 'RENEW_SOLAR_MP_S', name: 'ReNew Solar Madhya 1', area: 'MP', poolingStation: 'Rewa Central', capacityMw: 250, genType: 'Solar', portalVisible: true, pipelineActive: true },
+        { id: 'p-11', code: 'TATA_POWER_MH_S', name: 'Tata Power Sakri Solar', area: 'MH', poolingStation: 'Dhule Grid', capacityMw: 125, genType: 'Solar', portalVisible: true, pipelineActive: true },
+        { id: 'p-12', code: 'ACME_RAIPUR_CG_S', name: 'ACME Solar Raipur', area: 'CG', poolingStation: 'Raipur Pooling', capacityMw: 100, genType: 'Solar', portalVisible: true, pipelineActive: true },
+        { id: 'p-13', code: 'AZURE_POWER_GJ_S', name: 'Azure Power Gujarat', area: 'GJ', poolingStation: 'Charanka GIS', capacityMw: 200, genType: 'Solar', portalVisible: true, pipelineActive: true },
+        { id: 'p-14', code: 'HERO_FUTURE_WR_W', name: 'Hero Future Energies Wind', area: 'ISTS', poolingStation: 'Khavda PS2', capacityMw: 180, genType: 'Wind', portalVisible: true, pipelineActive: true },
+      ],
+      states: [
+        { id: 'st-cg', code: 'CG', name: 'Chhattisgarh', type: 'State', plants: 142, capacityMw: 1840, status: 'active' },
+        { id: 'st-gj', code: 'GJ', name: 'Gujarat', type: 'State', plants: 640, capacityMw: 14250, status: 'active' },
+        { id: 'st-mp', code: 'MP', name: 'Madhya Pradesh', type: 'State', plants: 385, capacityMw: 6120, status: 'active' },
+        { id: 'st-mh', code: 'MH', name: 'Maharashtra', type: 'State', plants: 512, capacityMw: 8910, status: 'active' },
+        { id: 'st-wr', code: 'WR-ISTS', name: 'Western Region ISTS', type: 'ISTS', plants: 89, capacityMw: 4200, status: 'active' },
+      ],
+      pooling: [
+        { id: 'ps-1', code: 'KPS1', name: 'Khavda Pooling Station 1', stateOrIsts: 'GJ', grid: 'WR', plants: 32, capacityMw: 4500, status: 'active' },
+        { id: 'ps-2', code: 'KPS2', name: 'Khavda Pooling Station 2', stateOrIsts: 'GJ', grid: 'WR', plants: 28, capacityMw: 3800, status: 'active' },
+        { id: 'ps-3', code: 'BHADLA', name: 'Bhadla Pooling Substation', stateOrIsts: 'ISTS', grid: 'NR', plants: 45, capacityMw: 2245, status: 'active' },
+        { id: 'ps-4', code: 'FATG', name: 'Fatehgarh Pooling Station', stateOrIsts: 'ISTS', grid: 'NR', plants: 36, capacityMw: 1800, status: 'active' },
+        { id: 'ps-5', code: 'PAV', name: 'Pavagada Solar Park PSS', stateOrIsts: 'ISTS', grid: 'SR', plants: 25, capacityMw: 2050, status: 'active' },
+        { id: 'ps-6', code: 'REWA', name: 'Rewa Ultra Mega Solar PSS', stateOrIsts: 'MP', grid: 'WR', plants: 18, capacityMw: 750, status: 'active' },
+        { id: 'ps-7', code: 'CHAR', name: 'Charanka Solar GIS', stateOrIsts: 'GJ', grid: 'WR', plants: 34, capacityMw: 600, status: 'active' },
+        { id: 'ps-8', code: 'SAKRI', name: 'Sakri Solar Substation', stateOrIsts: 'MH', grid: 'WR', plants: 12, capacityMw: 125, status: 'active' },
+        { id: 'ps-9', code: 'NAGDA', name: 'Nagda 400kV PSS', stateOrIsts: 'MP', grid: 'WR', plants: 15, capacityMw: 85, status: 'active' },
+        { id: 'ps-10', code: 'BAKT', name: 'Baktapur 220kV PSS', stateOrIsts: 'MP', grid: 'WR', plants: 22, capacityMw: 278, status: 'active' },
+        { id: 'ps-11', code: 'RAIPUR', name: 'Raipur Pooling Station', stateOrIsts: 'CG', grid: 'WR', plants: 14, capacityMw: 350, status: 'active' },
+        { id: 'ps-12', code: 'BILASPUR', name: 'Bilaspur Solar PSS', stateOrIsts: 'CG', grid: 'WR', plants: 9, capacityMw: 180, status: 'active' },
+        { id: 'ps-13', code: 'SHOLAPUR', name: 'Solapur Transmission PSS', stateOrIsts: 'MH', grid: 'WR', plants: 20, capacityMw: 450, status: 'active' },
+        { id: 'ps-14', code: 'MALOTRA', name: 'Malotra Pooling Station', stateOrIsts: 'GJ', grid: 'WR', plants: 16, capacityMw: 320, status: 'active' },
+      ],
+      grids: [
+        { id: 'gr-wr', code: 'WR', name: 'Western Regional Grid', rldc: 'WRLDC, Mumbai', regionsCovered: 'CG, GJ, MP, MH, Goa, DD, DNH', capacityMw: 35320, status: 'active' },
+        { id: 'gr-nr', code: 'NR', name: 'Northern Regional Grid', rldc: 'NRLDC, New Delhi', regionsCovered: 'RJ, HR, PB, UP, UK, HP, JK, DL', capacityMw: 42100, status: 'active' },
+        { id: 'gr-sr', code: 'SR', name: 'Southern Regional Grid', rldc: 'SRLDC, Bengaluru', regionsCovered: 'KA, TN, AP, TS, KL, PY', capacityMw: 38600, status: 'active' },
+      ],
+      coverage: [
+        { id: 'cov-1', plantCode: 'ACL_PSS3_KPS1_S', plantName: 'Adani Solar Khavda 1', region: 'GJ', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 96, coveragePct: 100.0, maxMw: 284.2, minMw: 0.0, avgMw: 92.4, zeroBlocks: 44, status: 'NORMAL' },
+        { id: 'cov-2', plantCode: 'AGE24AL_PSS3_KPS1_S', plantName: 'Adani Green Energy 24A', region: 'GJ', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 32, coveragePct: 33.3, maxMw: 120.0, minMw: 0.0, avgMw: 28.1, zeroBlocks: 12, status: 'MISSING DATA' },
+        { id: 'cov-3', plantCode: 'AGEL_PSS1_KPS1_S', plantName: 'Adani Green Energy 1', region: 'GJ', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 96, coveragePct: 100.0, maxMw: 310.5, minMw: 0.0, avgMw: 104.2, zeroBlocks: 42, status: 'NORMAL' },
+        { id: 'cov-4', plantCode: 'AHESL_PSS1_KPS1_S', plantName: 'Adani Hybrid Energy 1', region: 'GJ', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 0, coveragePct: 0.0, maxMw: 0.0, minMw: 0.0, avgMw: 0.0, zeroBlocks: 96, status: 'NO TELEMETRY' },
+        { id: 'cov-5', plantCode: 'ARERJL_PSS1_KPS1_S', plantName: 'Adani RE Rajasthan 1', region: 'ISTS', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 78, coveragePct: 81.2, maxMw: 195.4, minMw: 0.0, avgMw: 61.8, zeroBlocks: 38, status: 'DELAYED' },
+        { id: 'cov-6', plantCode: 'AUGEL_PSS2_KPS1_S', plantName: 'Adani Utility Green 2', region: 'GJ', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 96, coveragePct: 100.0, maxMw: 240.0, minMw: 0.0, avgMw: 78.5, zeroBlocks: 44, status: 'NORMAL' },
+        { id: 'cov-7', plantCode: 'AVAADA_PAVAGADA_S', plantName: 'Avaada Pavagada Solar', region: 'ISTS', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 96, coveragePct: 100.0, maxMw: 150.0, minMw: 0.0, avgMw: 48.2, zeroBlocks: 44, status: 'NORMAL' },
+        { id: 'cov-8', plantCode: 'BHADLA_NTPC_S', plantName: 'NTPC Bhadla Solar Plant', region: 'ISTS', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 96, coveragePct: 100.0, maxMw: 260.0, minMw: 0.0, avgMw: 85.0, zeroBlocks: 42, status: 'NORMAL' },
+        { id: 'cov-9', plantCode: 'CHARANKA_GPCL_S', plantName: 'Charanka Solar Park', region: 'GJ', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 54, coveragePct: 56.2, maxMw: 180.0, minMw: 0.0, avgMw: 42.0, zeroBlocks: 28, status: 'STALE SCADA' },
+        { id: 'cov-10', plantCode: 'RENEW_SOLAR_MP_S', plantName: 'ReNew Solar Madhya 1', region: 'MP', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 96, coveragePct: 100.0, maxMw: 250.0, minMw: 0.0, avgMw: 81.6, zeroBlocks: 43, status: 'NORMAL' },
+        { id: 'cov-11', plantCode: 'TATA_POWER_MH_S', plantName: 'Tata Power Sakri Solar', region: 'MH', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 96, coveragePct: 100.0, maxMw: 100.0, minMw: 0.0, avgMw: 33.1, zeroBlocks: 44, status: 'NORMAL' },
+        { id: 'cov-12', plantCode: 'ACME_RAIPUR_CG_S', plantName: 'ACME Solar Raipur', region: 'CG', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 0, coveragePct: 0.0, maxMw: 0.0, minMw: 0.0, avgMw: 0.0, zeroBlocks: 96, status: 'COMM FAILURE' },
+        { id: 'cov-13', plantCode: 'AZURE_POWER_GJ_S', plantName: 'Azure Power Gujarat', region: 'GJ', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 96, coveragePct: 100.0, maxMw: 200.0, minMw: 0.0, avgMw: 65.4, zeroBlocks: 43, status: 'NORMAL' },
+        { id: 'cov-14', plantCode: 'HERO_FUTURE_WR_W', plantName: 'Hero Future Energies Wind', region: 'ISTS', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 96, coveragePct: 100.0, maxMw: 180.0, minMw: 12.0, avgMw: 98.2, zeroBlocks: 0, status: 'NORMAL' },
+        { id: 'cov-15', plantCode: 'SUZLON_WIND_GJ_W', plantName: 'Suzlon Kutch Wind Farm', region: 'GJ', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 48, coveragePct: 50.0, maxMw: 120.0, minMw: 5.0, avgMw: 45.1, zeroBlocks: 8, status: 'PACKET DROP' },
+        { id: 'cov-16', plantCode: 'NTPC_KOLDAM_HY_H', plantName: 'NTPC Hydro Peaking Station', region: 'ISTS', date: '19-10-2026', expectedBlocks: 96, actualBlocks: 96, coveragePct: 100.0, maxMw: 400.0, minMw: 50.0, avgMw: 220.0, zeroBlocks: 0, status: 'NORMAL' },
+      ],
+      features: [
+        { id: 'f-1', name: 'Intraday Nowcasting Engine (15-min)', key: 'NOWCASTING_15M', category: 'CORE', description: 'Continuously updates 15-minute rolling horizon predictions using satellite cloud tracking.', enabled: true },
+        { id: 'f-2', name: 'GHI Cloud Optical Depth Radiative Model', key: 'GHI_OPTICAL_DEPTH', category: 'AI_ML', description: 'Computes Global Horizontal Irradiance via cloud optical depth and atmospheric radiative transfer.', enabled: true },
+        { id: 'f-3', name: 'Real-time SCADA Discrepancy Alerting', key: 'SCADA_ALERTING', category: 'SCADA', description: 'Triggers priority alarm notifications when actual vs predicted generation breaches 15% threshold.', enabled: true },
+        { id: 'f-4', name: 'Automated Day-Ahead Schedule Submission', key: 'AUTO_SCHEDULE_SUBMIT', category: 'CORE', description: 'Auto-delivers 96-block generation schedules directly to RLDC/SLDC scheduling portals.', enabled: true },
+        { id: 'f-5', name: 'Loss of Telemetry Fallback Predictor', key: 'TELEMETRY_FALLBACK', category: 'SCADA', description: 'Synthetic generation estimator based on neighboring plants when RTU or SCADA fails.', enabled: true },
+        { id: 'f-6', name: 'Regional Aggregated Dispatch Forecasting', key: 'REGIONAL_AGG_DISPATCH', category: 'CORE', description: 'Hierarchical aggregation across pooling stations, states, and regional grid control areas.', enabled: true },
+        { id: 'f-7', name: 'Extreme Weather & Dust Ramp Warnings', key: 'EXTREME_WEATHER_RAMP', category: 'AI_ML', description: 'Predicts abrupt wind curtailment and solar soiling dust storms 6 hours in advance.', enabled: true },
+        { id: 'f-8', name: 'Multi-Model Ensemble Weighting (AI/ML)', key: 'AI_ENSEMBLE_WEIGHT', category: 'AI_ML', description: 'Dynamically balances NWP, ECMWF, GFS, and local physics-informed neural network weights.', enabled: true },
+        { id: 'f-9', name: 'ISTS Pooling Station Virtual Metering', key: 'ISTS_VIRTUAL_METER', category: 'SCADA', description: 'Virtual check-meter calculation for inter-state transmission pooling buses.', enabled: true },
+        { id: 'f-10', name: 'Automated Excel / CSV Generation Export', key: 'EXCEL_EXPORT_PIPELINE', category: 'REPORTING', description: 'Scheduled daily export of forecast vs actual generation tables for grid compliance.', enabled: true },
+      ],
+    };
+
+    function switchAdminSection(sec) {
+      adminState.currentSection = sec;
+      const sections = ['overview', 'users', 'plants', 'regions', 'coverage', 'features'];
+      sections.forEach((s) => {
+        const el = document.getElementById(`admin-sec-${s}`);
+        const nav = document.getElementById(`admin-nav-${s}`);
+        if (el) el.style.display = s === sec ? 'flex' : 'none';
+        if (nav) {
+          const isActive = s === sec;
+          nav.style.borderColor = isActive ? '#f59e0b' : 'transparent';
+          nav.style.backgroundColor = isActive ? 'rgba(245,158,11,0.15)' : 'transparent';
+          nav.style.color = isActive ? '#f59e0b' : '#71717a';
+        }
+      });
+
+      if (sec === 'users') renderAdminUsersTable();
+      if (sec === 'plants') renderAdminPlantsTable();
+      if (sec === 'regions') renderAdminRegions();
+      if (sec === 'coverage') renderAdminCoverageTable();
+      if (sec === 'features') renderAdminFeatures();
+    }
+
+    function toggleAdminSidebarCollapse() {
+      const sb = document.getElementById('admin-icon-sidebar');
+      if (sb) {
+        sb.style.display = sb.style.display === 'none' ? 'flex' : 'none';
+      }
+    }
+
+    // --- Users Controller ---
+    function renderAdminUsersTable() {
+      const q = (document.getElementById('admin-user-search')?.value || '').toLowerCase().trim();
+      const tbody = document.getElementById('admin-users-tbody');
+      if (!tbody) return;
+
+      const filtered = adminState.users.filter((u) =>
+        !q || u.username.toLowerCase().includes(q) || u.displayName.toLowerCase().includes(q)
+      );
+
+      const activeCount = adminState.users.filter((u) => u.status === 'active').length;
+      const sub = document.getElementById('admin-user-subtitle');
+      if (sub) sub.innerText = `${adminState.users.length} total · ${activeCount} active`;
+      const kpiUsers = document.getElementById('kpi-users-count');
+      if (kpiUsers) kpiUsers.innerText = adminState.users.length;
+
+      tbody.innerHTML = filtered.map((u) => {
+        const isActive = u.status === 'active';
+        return `
+          <tr style="border-bottom:1px solid #18181b;">
+            <td style="padding:10px 14px; font-weight:700; font-family:monospace; color:#f59e0b;">
+              ${u.username}
+              ${u.role === 'super_admin' ? '<span style="margin-left:8px; font-size:9px; padding:1px 5px; border-radius:3px; background:rgba(245,158,11,0.15); color:#f59e0b; font-weight:700;">SUPER ADMIN</span>' : ''}
+            </td>
+            <td style="padding:10px 14px; font-weight:600;">
+              ${u.displayName}
+              ${u.assignedStates && u.assignedStates.length ? `<div style="font-size:10px; color:#71717a; margin-top:2px;">States: ${u.assignedStates.join(', ')}</div>` : ''}
+            </td>
+            <td style="padding:10px 14px; text-align:center;">
+              <span style="display:inline-block; padding:2px 8px; border-radius:12px; font-size:10px; font-weight:700; background:${isActive ? 'rgba(16,185,129,0.15)' : 'rgba(113,113,122,0.2)'}; color:${isActive ? '#10b981' : '#71717a'}; border:1px solid ${isActive ? 'rgba(16,185,129,0.3)' : 'rgba(113,113,122,0.3)'};">
+                ${u.status}
+              </span>
+            </td>
+            <td style="padding:10px 14px; text-align:right;">
+              <div style="display:inline-flex; align-items:center; gap:8px;">
+                <button type="button" title="Edit User" style="background:none; border:none; color:#71717a; cursor:pointer; font-size:13px;">✏️</button>
+                <button type="button" onclick="toggleAdminUserStatus('${u.id}')" style="background:${isActive ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; color:${isActive ? '#ef4444' : '#10b981'}; border:1px solid ${isActive ? '#ef4444' : '#10b981'}; border-radius:4px; padding:3px 8px; font-size:10px; font-weight:700; cursor:pointer;">
+                  ${isActive ? 'Deactivate' : 'Activate'}
+                </button>
+                <button type="button" onclick="deleteAdminUser('${u.id}')" title="Delete User" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:13px;">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function toggleAdminUserStatus(id) {
+      const u = adminState.users.find((x) => x.id === id);
+      if (u) {
+        u.status = u.status === 'active' ? 'inactive' : 'active';
+        renderAdminUsersTable();
+      }
+    }
+
+    function deleteAdminUser(id) {
+      if (confirm('Are you sure you want to delete this user?')) {
+        adminState.users = adminState.users.filter((x) => x.id !== id);
+        renderAdminUsersTable();
+      }
+    }
+
+    function handleCreateUserSubmit(e) {
+      e.preventDefault();
+      const username = document.getElementById('modal-user-username').value.trim().toLowerCase();
+      const displayName = document.getElementById('modal-user-display').value.trim();
+      const email = document.getElementById('modal-user-email').value.trim();
+      const role = document.getElementById('modal-user-role').value;
+      const checkedBoxes = document.querySelectorAll('input[name="assignState"]:checked');
+      const assignedStates = Array.from(checkedBoxes).map((cb) => cb.value);
+
+      adminState.users.push({
+        id: `u-${Date.now()}`,
+        username,
+        displayName,
+        email: email || undefined,
+        role,
+        status: 'active',
+        assignedStates,
+      });
+
+      closeAdminModal('user');
+      renderAdminUsersTable();
+      alert(`User ${username} created successfully.`);
+    }
+
+    // --- Plants Controller ---
+    function renderAdminPlantsTable() {
+      const q = (document.getElementById('admin-plant-search')?.value || '').toLowerCase().trim();
+      const area = document.getElementById('admin-plant-area-filter')?.value || 'ALL';
+      const tbody = document.getElementById('admin-plants-tbody');
+      if (!tbody) return;
+
+      const filtered = adminState.plants.filter((p) => {
+        const matchArea = area === 'ALL' || p.area === area;
+        const matchSearch = !q || p.code.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.area.toLowerCase().includes(q) || p.poolingStation.toLowerCase().includes(q);
+        return matchArea && matchSearch;
+      });
+
+      tbody.innerHTML = filtered.map((p) => {
+        const areaColor = p.area === 'GJ' ? '#38bdf8' : p.area === 'MH' ? '#a855f7' : p.area === 'MP' ? '#f59e0b' : p.area === 'CG' ? '#10b981' : '#ec4899';
+        const areaBg = p.area === 'GJ' ? 'rgba(56,189,248,0.15)' : p.area === 'MH' ? 'rgba(168,85,247,0.15)' : p.area === 'MP' ? 'rgba(245,158,11,0.15)' : p.area === 'CG' ? 'rgba(16,185,129,0.15)' : 'rgba(236,72,153,0.15)';
+        return `
+          <tr style="border-bottom:1px solid #18181b;">
+            <td style="padding:9px 12px; font-weight:700; font-family:monospace; color:#f59e0b;">${p.code}</td>
+            <td style="padding:9px 12px; font-weight:600;">
+              ${p.name}
+              ${p.capacityMw ? `<span style="font-size:9px; color:#71717a; margin-left:6px;">(${p.capacityMw} MW · ${p.genType})</span>` : ''}
+            </td>
+            <td style="padding:9px 12px;">
+              <span style="padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; background:${areaBg}; color:${areaColor};">
+                ${p.area}
+              </span>
+            </td>
+            <td style="padding:9px 12px; color:#888891;">${p.poolingStation}</td>
+            <td style="padding:9px 12px; text-align:center;">
+              <button type="button" onclick="togglePlantToggle('${p.id}', 'portal')" style="background:${p.portalVisible ? '#10b981' : '#3f3f46'}; border:none; border-radius:12px; width:30px; height:16px; position:relative; cursor:pointer; transition:0.2s;">
+                <span style="position:absolute; width:12px; height:12px; background:#fff; border-radius:50%; top:2px; left:${p.portalVisible ? '16px' : '2px'}; transition:0.2s;"></span>
+              </button>
+            </td>
+            <td style="padding:9px 12px; text-align:center;">
+              <button type="button" onclick="togglePlantToggle('${p.id}', 'pipeline')" style="background:${p.pipelineActive ? '#10b981' : '#3f3f46'}; border:none; border-radius:12px; width:30px; height:16px; position:relative; cursor:pointer; transition:0.2s;">
+                <span style="position:absolute; width:12px; height:12px; background:#fff; border-radius:50%; top:2px; left:${p.pipelineActive ? '16px' : '2px'}; transition:0.2s;"></span>
+              </button>
+            </td>
+            <td style="padding:9px 12px; text-align:right;">
+              <div style="display:inline-flex; align-items:center; gap:8px;">
+                <button type="button" title="Edit Plant" style="background:none; border:none; color:#71717a; cursor:pointer; font-size:13px;">✏️</button>
+                <button type="button" onclick="deleteAdminPlant('${p.id}')" title="Delete Plant" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:13px;">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function togglePlantToggle(id, field) {
+      const p = adminState.plants.find((x) => x.id === id);
+      if (p) {
+        if (field === 'portal') p.portalVisible = !p.portalVisible;
+        if (field === 'pipeline') p.pipelineActive = !p.pipelineActive;
+        renderAdminPlantsTable();
+      }
+    }
+
+    function deleteAdminPlant(id) {
+      if (confirm('Delete this plant from telemetry directory?')) {
+        adminState.plants = adminState.plants.filter((x) => x.id !== id);
+        renderAdminPlantsTable();
+      }
+    }
+
+    function handleAddPlantSubmit(e) {
+      e.preventDefault();
+      const code = document.getElementById('modal-plant-code').value.trim().toUpperCase();
+      const name = document.getElementById('modal-plant-name').value.trim();
+      const area = document.getElementById('modal-plant-area').value;
+      const poolingStation = document.getElementById('modal-plant-ps').value.trim() || 'Central PSS';
+      const cap = document.getElementById('modal-plant-capacity').value;
+      const genType = document.getElementById('modal-plant-gentype').value;
+      const portal = document.getElementById('modal-plant-portal').checked;
+      const pipeline = document.getElementById('modal-plant-pipeline').checked;
+
+      adminState.plants.unshift({
+        id: `p-${Date.now()}`,
+        code,
+        name,
+        area,
+        poolingStation,
+        capacityMw: cap ? parseFloat(cap) : 100,
+        genType,
+        portalVisible: portal,
+        pipelineActive: pipeline,
+      });
+
+      closeAdminModal('plant');
+      renderAdminPlantsTable();
+      alert(`Plant ${code} registered successfully.`);
+    }
+
+    // --- Regions Controller ---
+    function switchRegionTab(tab) {
+      const tabs = ['states', 'pooling', 'grids'];
+      tabs.forEach((t) => {
+        const el = document.getElementById(`region-tab-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (el) el.style.display = t === tab ? 'block' : 'none';
+        if (btn) {
+          btn.style.borderBottomColor = t === tab ? '#f59e0b' : 'transparent';
+          btn.style.color = t === tab ? '#f59e0b' : '#71717a';
+        }
+      });
+    }
+
+    function renderAdminRegions() {
+      // States
+      const statesTbody = document.getElementById('admin-states-tbody');
+      if (statesTbody) {
+        statesTbody.innerHTML = adminState.states.map((st) => `
+          <tr style="border-bottom:1px solid #18181b;">
+            <td style="padding:9px 12px; font-weight:700; font-family:monospace; color:#f59e0b;">${st.code}</td>
+            <td style="padding:9px 12px; font-weight:600;">${st.name}</td>
+            <td style="padding:9px 12px;">
+              <span style="padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; background:${st.type === 'State' ? 'rgba(56,189,248,0.15)' : 'rgba(236,72,153,0.15)'}; color:${st.type === 'State' ? '#38bdf8' : '#ec4899'};">
+                ${st.type}
+              </span>
+            </td>
+            <td style="padding:9px 12px; text-align:right; font-family:monospace;">${st.plants}</td>
+            <td style="padding:9px 12px; text-align:right; font-family:monospace;">${st.capacityMw.toLocaleString()} MW</td>
+            <td style="padding:9px 12px; text-align:center;">
+              <span style="padding:2px 8px; border-radius:12px; font-size:10px; font-weight:700; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);">
+                ${st.status}
+              </span>
+            </td>
+            <td style="padding:9px 12px; text-align:right;">
+              <button type="button" onclick="deleteAdminState('${st.id}')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:13px;">🗑️</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      // Pooling
+      const poolingTbody = document.getElementById('admin-pooling-tbody');
+      if (poolingTbody) {
+        poolingTbody.innerHTML = adminState.pooling.map((ps) => `
+          <tr style="border-bottom:1px solid #18181b;">
+            <td style="padding:9px 12px; font-weight:700; font-family:monospace; color:#f59e0b;">${ps.code}</td>
+            <td style="padding:9px 12px; font-weight:600;">${ps.name}</td>
+            <td style="padding:9px 12px; color:#38bdf8; font-weight:600;">${ps.stateOrIsts}</td>
+            <td style="padding:9px 12px; color:#a855f7; font-weight:600;">${ps.grid}</td>
+            <td style="padding:9px 12px; text-align:right; font-family:monospace;">${ps.plants}</td>
+            <td style="padding:9px 12px; text-align:right; font-family:monospace;">${ps.capacityMw.toLocaleString()} MW</td>
+            <td style="padding:9px 12px; text-align:center;">
+              <span style="padding:2px 8px; border-radius:12px; font-size:10px; font-weight:700; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);">
+                ${ps.status}
+              </span>
+            </td>
+            <td style="padding:9px 12px; text-align:right;">
+              <button type="button" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:13px;">🗑️</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      // Grids
+      const gridsTbody = document.getElementById('admin-grids-tbody');
+      if (gridsTbody) {
+        gridsTbody.innerHTML = adminState.grids.map((gr) => `
+          <tr style="border-bottom:1px solid #18181b;">
+            <td style="padding:9px 12px; font-weight:700; font-family:monospace; color:#f59e0b;">${gr.code}</td>
+            <td style="padding:9px 12px; font-weight:600;">${gr.name}</td>
+            <td style="padding:9px 12px; color:#38bdf8;">${gr.rldc}</td>
+            <td style="padding:9px 12px; color:#888891;">${gr.regionsCovered}</td>
+            <td style="padding:9px 12px; text-align:right; font-family:monospace;">${gr.capacityMw.toLocaleString()} MW</td>
+            <td style="padding:9px 12px; text-align:center;">
+              <span style="padding:2px 8px; border-radius:12px; font-size:10px; font-weight:700; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);">
+                ${gr.status}
+              </span>
+            </td>
+            <td style="padding:9px 12px; text-align:right;">
+              <button type="button" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:13px;">🗑️</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    function deleteAdminState(id) {
+      if (confirm('Delete this region jurisdiction?')) {
+        adminState.states = adminState.states.filter((x) => x.id !== id);
+        renderAdminRegions();
+      }
+    }
+
+    function handleAddRegionSubmit(e) {
+      e.preventDefault();
+      const code = document.getElementById('modal-reg-code').value.trim().toUpperCase();
+      const name = document.getElementById('modal-reg-name').value.trim();
+      const type = document.getElementById('modal-reg-type').value;
+      const cap = document.getElementById('modal-reg-capacity').value;
+
+      if (type === 'State' || type === 'ISTS') {
+        adminState.states.push({
+          id: `st-${Date.now()}`,
+          code,
+          name,
+          type,
+          plants: 12,
+          capacityMw: cap ? parseInt(cap) : 1000,
+          status: 'active',
+        });
+      } else {
+        adminState.pooling.push({
+          id: `ps-${Date.now()}`,
+          code,
+          name,
+          stateOrIsts: 'GJ',
+          grid: 'WR',
+          plants: 8,
+          capacityMw: cap ? parseInt(cap) : 500,
+          status: 'active',
+        });
+      }
+
+      closeAdminModal('region');
+      renderAdminRegions();
+      alert(`Region ${name} added.`);
+    }
+
+    // --- Live Actuals Coverage Controller ---
+    function renderAdminCoverageTable() {
+      const onlyIssues = document.getElementById('coverage-only-issues')?.checked;
+      const reg = document.getElementById('coverage-region-filter')?.value || 'All';
+      const tbody = document.getElementById('admin-coverage-tbody');
+      if (!tbody) return;
+
+      const filtered = adminState.coverage.filter((r) => {
+        if (onlyIssues && r.status === 'NORMAL') return false;
+        if (reg !== 'All' && r.region !== reg) return false;
+        return true;
+      });
+
+      tbody.innerHTML = filtered.map((row) => {
+        const isZero = row.coveragePct === 0;
+        const isFull = row.coveragePct === 100;
+        const statusBg = row.status === 'NORMAL' ? 'rgba(16,185,129,0.15)' : row.status === 'DELAYED' ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)';
+        const statusColor = row.status === 'NORMAL' ? '#10b981' : row.status === 'DELAYED' ? '#f59e0b' : '#ef4444';
+        return `
+          <tr style="border-bottom:1px solid #18181b;">
+            <td style="padding:8px 12px; font-weight:700; font-family:monospace; color:#f59e0b;">${row.plantCode}</td>
+            <td style="padding:8px 12px; color:#888891; font-family:monospace;">${row.date}</td>
+            <td style="padding:8px 12px; text-align:right; font-family:monospace;">${row.expectedBlocks}</td>
+            <td style="padding:8px 12px; text-align:right; font-family:monospace; font-weight:700; color:${isZero ? '#ef4444' : isFull ? '#10b981' : '#f59e0b'};">
+              ${row.actualBlocks}
+            </td>
+            <td style="padding:8px 12px; text-align:center;">
+              <span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:700; font-family:monospace; background:${isZero ? 'rgba(239,68,68,0.15)' : isFull ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)'}; color:${isZero ? '#ef4444' : isFull ? '#10b981' : '#f59e0b'};">
+                ${row.coveragePct.toFixed(1)}%
+              </span>
+            </td>
+            <td style="padding:8px 12px; text-align:right; font-family:monospace;">${row.maxMw.toFixed(1)}</td>
+            <td style="padding:8px 12px; text-align:right; font-family:monospace;">${row.minMw.toFixed(1)}</td>
+            <td style="padding:8px 12px; text-align:right; font-family:monospace;">${row.avgMw.toFixed(1)}</td>
+            <td style="padding:8px 12px; text-align:right; font-family:monospace; color:${row.zeroBlocks > 50 ? '#ef4444' : '#f4f4f5'};">${row.zeroBlocks}</td>
+            <td style="padding:8px 12px; text-align:center;">
+              <span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:700; background:${statusBg}; color:${statusColor}; border:1px solid ${statusColor}40;">
+                ${row.status}
+              </span>
+            </td>
+            <td style="padding:8px 12px; text-align:center;">
+              <button type="button" onclick="inspectCoverage('${row.id}')" style="background:transparent; color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:4px; padding:2px 8px; font-size:10px; font-weight:600; cursor:pointer;">
+                Inspect
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function refreshAdminCoverage() {
+      const ico = document.getElementById('coverage-refresh-icon');
+      if (ico) ico.style.transform = 'rotate(360deg)';
+      setTimeout(() => {
+        if (ico) ico.style.transform = 'none';
+        renderAdminCoverageTable();
+      }, 350);
+    }
+
+    function inspectCoverage(id) {
+      const row = adminState.coverage.find((x) => x.id === id);
+      if (!row) return;
+
+      document.getElementById('inspect-plant-title').innerText = `${row.plantCode} — ${row.plantName}`;
+      document.getElementById('inspect-date').innerText = row.date;
+      document.getElementById('inspect-region').innerText = `${row.region} SLDC / ISTS`;
+      document.getElementById('inspect-cov').innerText = `${row.actualBlocks} / ${row.expectedBlocks} (${row.coveragePct.toFixed(1)}%)`;
+      
+      const stEl = document.getElementById('inspect-status');
+      stEl.innerText = row.status;
+      stEl.style.color = row.status === 'NORMAL' ? '#10b981' : row.status === 'DELAYED' ? '#f59e0b' : '#ef4444';
+
+      const grid = document.getElementById('inspect-heatmap-grid');
+      if (grid) {
+        grid.innerHTML = Array.from({ length: 48 }).map((_, i) => {
+          const isFilled = i < Math.round((row.actualBlocks / 96) * 48);
+          return `<div title="Block ${i*2+1}" style="background:${isFilled ? '#10b981' : '#ef4444'}; opacity:${isFilled ? 0.9 : 0.4}; border-radius:1px;"></div>`;
+        }).join('');
+      }
+
+      openAdminModal('inspect');
+    }
+
+    // --- Features Controller ---
+    function renderAdminFeatures() {
+      const grid = document.getElementById('admin-features-grid');
+      if (!grid) return;
+
+      const activeCount = adminState.features.filter((f) => f.enabled).length;
+      const kpiFeat = document.getElementById('kpi-features-count');
+      if (kpiFeat) kpiFeat.innerText = activeCount;
+
+      const sub = document.getElementById('features-status-sub');
+      if (sub) {
+        sub.innerHTML = `${activeCount} of ${adminState.features.length} features active · <span style="color:${adminState.maintenanceMode ? '#ef4444' : '#10b981'}; font-weight:700;">${adminState.maintenanceMode ? 'SYSTEM IN MAINTENANCE MODE' : 'SYSTEM OPERATIONAL'}</span>`;
+      }
+
+      grid.innerHTML = adminState.features.map((f) => `
+        <div style="background:#111114; border:1px solid #1f1f23; border-radius:6px; padding:12px; display:flex; flex-direction:column; justify-content:space-between; gap:10px;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-size:12px; font-weight:700; color:#f4f4f5;">${f.name}</span>
+              <button type="button" onclick="toggleAdminFeature('${f.id}')" style="background:${f.enabled ? '#10b981' : '#3f3f46'}; border:none; border-radius:12px; width:34px; height:18px; position:relative; cursor:pointer; transition:0.2s;">
+                <span style="position:absolute; width:14px; height:14px; background:#fff; border-radius:50%; top:2px; left:${f.enabled ? '18px' : '2px'}; transition:0.2s;"></span>
+              </button>
+            </div>
+            <div style="font-size:10px; color:#71717a; font-family:monospace; margin-bottom:6px;">KEY: ${f.key}</div>
+            <p style="font-size:11px; color:#888891; margin:0; line-height:1.4;">${f.description}</p>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:9px; border-top:1px solid #1f1f23; padding-top:8px;">
+            <span style="color:#a855f7; font-weight:700;">CATEGORY: ${f.category}</span>
+            <span style="color:${f.enabled ? '#10b981' : '#71717a'}; font-weight:700;">${f.enabled ? '● ONLINE' : '○ DISABLED'}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function toggleAdminFeature(id) {
+      const f = adminState.features.find((x) => x.id === id);
+      if (f) {
+        f.enabled = !f.enabled;
+        renderAdminFeatures();
+      }
+    }
+
+    function confirmMaintenanceToggle() {
+      adminState.maintenanceMode = !adminState.maintenanceMode;
+      closeAdminModal('maintenance');
+
+      const overviewBanner = document.getElementById('admin-overview-maint-banner');
+      if (overviewBanner) {
+        overviewBanner.style.background = adminState.maintenanceMode ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.08)';
+        overviewBanner.style.borderColor = adminState.maintenanceMode ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.25)';
+        overviewBanner.style.color = adminState.maintenanceMode ? '#ef4444' : '#f59e0b';
+        overviewBanner.innerHTML = `<span>${adminState.maintenanceMode ? '🛑' : '⚠️'}</span><span><strong>Maintenance Mode is currently ${adminState.maintenanceMode ? 'ENABLED' : 'DISABLED'}.</strong> ${adminState.maintenanceMode ? 'All public forecasts and non-admin queries are suspended.' : 'Enabling it will block access to non-admin users.'}</span>`;
+      }
+
+      const featBox = document.getElementById('features-maint-box');
+      if (featBox) {
+        featBox.style.background = adminState.maintenanceMode ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.08)';
+        featBox.style.borderColor = adminState.maintenanceMode ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.25)';
+        featBox.innerHTML = `<span style="font-size:20px;">${adminState.maintenanceMode ? '🛑' : '⚠️'}</span><div style="font-size:11px; line-height:1.5;"><strong style="color:${adminState.maintenanceMode ? '#ef4444' : '#f59e0b'};">${adminState.maintenanceMode ? 'Maintenance Mode is currently ACTIVE.' : 'Maintenance Mode is currently DISABLED.'}</strong> <span style="color:#888891;">${adminState.maintenanceMode ? 'All external SLDC connections and non-super-admin sessions are temporarily suspended.' : 'Enabling it will display a maintenance notice to standard users while allowing administrative debugging.'}</span></div>`;
+      }
+
+      renderAdminFeatures();
+      alert(adminState.maintenanceMode ? '⚠️ Maintenance mode ACTIVATED.' : '✅ Maintenance mode deactivated.');
+    }
+
+    // --- Modal Helpers ---
+    function openAdminModal(name) {
+      const m = document.getElementById(`modal-admin-${name}`);
+      if (m) m.style.display = 'flex';
+      if (name === 'maintenance') {
+        const title = document.getElementById('modal-maint-title');
+        const desc = document.getElementById('modal-maint-desc');
+        const btn = document.getElementById('modal-maint-confirm-btn');
+        if (title) title.innerText = adminState.maintenanceMode ? 'Deactivate Maintenance Mode?' : 'Activate System Maintenance?';
+        if (desc) desc.innerText = adminState.maintenanceMode ? 'Deactivating maintenance mode will restore public access to live grid forecasting streams and SLDC portals.' : 'Enabling maintenance mode will terminate non-admin websockets and show a temporary maintenance notification to external grid operators.';
+        if (btn) {
+          btn.innerText = adminState.maintenanceMode ? 'Confirm Deactivation' : 'Confirm Activate';
+          btn.style.background = adminState.maintenanceMode ? '#10b981' : '#ef4444';
+          btn.style.color = adminState.maintenanceMode ? '#000000' : '#ffffff';
+        }
+      }
+    }
+
+    function closeAdminModal(name) {
+      const m = document.getElementById(`modal-admin-${name}`);
+      if (m) m.style.display = 'none';
+    }
+
+    // =========================================================
+
+      e.preventDefault();
+      switchView('dashboard');
+    }
+
+    // Mount on load
+    window.addEventListener('DOMContentLoaded', () => {
+      onCategoryChange();
+      initMap();
+      renderCharts();
+      populateTable();
+    });
+  </script>
+</body>
+</html>
