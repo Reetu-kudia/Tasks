@@ -107,3 +107,4 @@ Furthermore, `D:\grid-iitb` is designated as **strictly read-only**. Attempting 
 - [x] Executed `npm run lint` in reference repository; captured exact output.
 - [x] Isolated and documented unrelated upstream errors without modifying unapproved files.
 - [x] Formal mentor disclosure provided detailing clean training-slice status versus legacy debt.
+

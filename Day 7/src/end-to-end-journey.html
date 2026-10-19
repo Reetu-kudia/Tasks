@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GRID-IITB Training Portal — End-to-End User Journey Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0a0a0a; color: #e4e4e7; font-family: ui-sans-serif, system-ui, sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #111111; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+    .tab-active { border-bottom: 2px solid #f59e0b; color: #f59e0b; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col custom-scrollbar">
+
+  <!-- TOP HEADER -->
+  <header class="h-14 bg-[#0a0a0a] border-b border-[#1f1f1f] px-4 flex items-center justify-between sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded bg-[#1c1c1c] border border-[#27272a] flex items-center justify-center font-bold text-amber-500 text-xs">
+        IITB
+      </div>
+      <div>
+        <h1 class="text-xs font-bold tracking-wider text-white uppercase flex items-center gap-2">
+          GI-IITB Experimental Forecast Portal
+          <span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-950 text-amber-400 border border-amber-800 font-mono">TRAINING DEMO</span>
+        </h1>
+        <p class="text-[10px] text-zinc-500 tracking-wider">NOWCASTING &middot; INTRA &middot; MEDIUM</p>
+      </div>
+    </div>
+
+    <!-- Active User & Role Display -->
+    <div class="flex items-center gap-4 text-xs">
+      <div class="flex items-center gap-2 bg-[#141414] px-3 py-1.5 rounded border border-[#27272a]">
+        <span class="w-2 h-2 rounded-full bg-emerald-500" id="userStatusDot"></span>
+        <span class="text-zinc-400" id="userDisplayName">Guest (Logged Out)</span>
+        <span class="px-1.5 py-0.2 rounded text-[10px] bg-zinc-800 text-zinc-300 font-mono" id="userRoleBadge">NONE</span>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center gap-2" id="navContainer" style="display: none;">
+        <button onclick="switchView('dashboard')" id="navDashboard" class="px-3 py-1.5 text-xs font-medium text-white hover:text-amber-400 transition">Dashboard</button>
+        <button onclick="switchView('admin')" id="navAdmin" class="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-amber-400 transition">Admin Panel</button>
+        <button onclick="handleLogout()" class="px-3 py-1.5 bg-red-950/60 hover:bg-red-900 text-red-300 text-xs rounded border border-red-800 transition">Logout</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- INTERACTIVE DEMO CONTROLS BANNER (For Evaluator/Mentor) -->
+  <aside class="bg-[#111318] border-b border-amber-900/50 px-4 py-2 flex flex-wrap items-center justify-between text-xs gap-2">
+    <div class="flex items-center gap-2 text-zinc-300">
+      <span class="text-amber-400 font-bold">🛠️ Mentor Test Controller:</span>
+      <span class="text-zinc-400 text-[11px]">Simulate view states on demand:</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="setSimulationState('loading')" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded text-[11px] border border-zinc-700">Simulate Loading</button>
+      <button onclick="setSimulationState('success')" class="px-2.5 py-1 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 rounded text-[11px] border border-emerald-800">Simulate Success</button>
+      <button onclick="setSimulationState('empty')" class="px-2.5 py-1 bg-amber-950 hover:bg-amber-900 text-amber-300 rounded text-[11px] border border-amber-800">Simulate Empty (0 rows)</button>
+      <button onclick="setSimulationState('error')" class="px-2.5 py-1 bg-red-950 hover:bg-red-900 text-red-300 rounded text-[11px] border border-red-800">Simulate Error (HTTP 500)</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 p-5 max-w-7xl mx-auto w-full">
+
+    <!-- ─── 1. LOGIN VIEW (Mock Authenticator) ─── -->
+    <section id="viewLogin" class="py-12 flex flex-col items-center justify-center">
+      <div class="w-full max-w-md bg-[#111] border border-[#222] rounded-xl p-8 shadow-2xl">
+        <div class="text-center mb-6">
+          <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto mb-3 text-xl font-bold">
+            ⚡
+          </div>
+          <h2 class="text-lg font-bold text-white">GRID-IITB Training Access</h2>
+          <p class="text-xs text-zinc-400 mt-1">Select an authorized role to simulate an end-to-end session</p>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 mb-1">Select Persona</label>
+            <select id="loginRoleSelect" class="w-full bg-[#18181b] border border-[#27272a] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+              <option value="super_admin">National Chief Admin (super_admin) &mdash; Full Access</option>
+              <option value="region_admin">Western Region Dispatcher (region_admin) &mdash; Plants & Users</option>
+              <option value="state_admin">Gujarat SLDC Operator (state_admin) &mdash; Read-only</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 mb-1">Assigned Jurisdictional Region</label>
+            <input type="text" id="loginRegion" value="Gujarat (GJ) & Western ISTS" readonly class="w-full bg-[#141414] border border-[#222] rounded px-3 py-2 text-xs text-zinc-400">
+          </div>
+
+          <button onclick="handleLogin()" class="w-full mt-2 py-2.5 bg-amber-600 hover:bg-amber-500 text-black font-semibold text-xs rounded transition shadow-lg">
+            Authenticate Session &rarr;
+          </button>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-[#1f1f1f] text-[11px] text-zinc-500 text-center">
+          Security Boundary: Mock-only test credentials. Zero live production systems accessed.
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 2. DASHBOARD VIEW (Filters, Charts, Map, Tables) ─── -->
+    <section id="viewDashboard" class="space-y-5" style="display: none;">
+      
+      <!-- Safe Filter Bar -->
+      <div class="bg-[#111] border border-[#1f1f1f] rounded-lg p-4">
+        <div class="flex items-center justify-between pb-3 border-b border-[#1f1f1f]">
+          <span class="text-xs font-bold uppercase tracking-wider text-amber-500 flex items-center gap-2">
+            <span>🔍</span> Operational Forecast Filters
+          </span>
+          <span class="text-[11px] text-zinc-400 font-mono" id="filterStatusBadge">Sync: Live</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mt-3">
+          <div>
+            <label class="block text-[11px] text-zinc-400 mb-1">Region</label>
+            <select id="filterRegion" onchange="triggerFilterUpdate()" class="w-full bg-[#18181b] border border-[#27272a] rounded px-2.5 py-1.5 text-xs text-white">
+              <option value="GJ">GJ &mdash; Gujarat</option>
+              <option value="MH">MH &mdash; Maharashtra</option>
+              <option value="RJ">RJ &mdash; Rajasthan</option>
+              <option value="WR">WR &mdash; Western Region (ISTS)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] text-zinc-400 mb-1">Generation Type</label>
+            <select id="filterType" onchange="triggerFilterUpdate()" class="w-full bg-[#18181b] border border-[#27272a] rounded px-2.5 py-1.5 text-xs text-white">
+              <option value="ALL">All Types</option>
+              <option value="SOLAR">Solar Only</option>
+              <option value="WIND">Wind Only</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] text-zinc-400 mb-1">Date</label>
+            <input type="date" id="filterDate" value="2026-10-19" onchange="triggerFilterUpdate()" class="w-full bg-[#18181b] border border-[#27272a] rounded px-2.5 py-1.5 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-[11px] text-zinc-400 mb-1">Revision</label>
+            <select id="filterRev" onchange="triggerFilterUpdate()" class="w-full bg-[#18181b] border border-[#27272a] rounded px-2.5 py-1.5 text-xs text-white">
+              <option value="R0">R0 (Day-Ahead)</option>
+              <option value="R1">R1 (Intra-Day 1)</option>
+              <option value="R2">R2 (Intra-Day 2)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] text-zinc-400 mb-1">Site Search</label>
+            <input type="text" id="filterSearch" placeholder="e.g. Charanka" oninput="triggerFilterUpdate()" class="w-full bg-[#18181b] border border-[#27272a] rounded px-2.5 py-1.5 text-xs text-white">
+          </div>
+        </div>
+
+        <div class="mt-3 flex items-center justify-between text-[11px] font-mono text-zinc-400 bg-[#0d0d0d] px-3 py-1.5 rounded border border-[#1f1f1f]">
+          <div><span class="text-emerald-500">&gt;</span> Query: <span class="text-blue-400" id="queryPreview">/api/series?region=GJ&type=ALL&date=2026-10-19&revision=R0</span></div>
+          <span class="text-zinc-500">Zero Full-Page Reloads</span>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-[#111] border border-[#1f1f1f] rounded-lg p-3">
+          <div class="text-[11px] text-zinc-500 uppercase font-bold">Installed Capacity</div>
+          <div class="text-xl font-bold text-white mt-1" id="kpiCapacity">1,250.0 MW</div>
+          <div class="text-[10px] text-emerald-400 mt-0.5">&uarr; Gujarat Solar & Wind Hub</div>
+        </div>
+        <div class="bg-[#111] border border-[#1f1f1f] rounded-lg p-3">
+          <div class="text-[11px] text-zinc-500 uppercase font-bold">Day-Ahead (R0) Peak</div>
+          <div class="text-xl font-bold text-amber-400 mt-1" id="kpiR0">1,120.4 MW</div>
+          <div class="text-[10px] text-zinc-400 mt-0.5">Expected at 12:45 IST</div>
+        </div>
+        <div class="bg-[#111] border border-[#1f1f1f] rounded-lg p-3">
+          <div class="text-[11px] text-zinc-500 uppercase font-bold">Intra-Day (R1) Actual</div>
+          <div class="text-xl font-bold text-cyan-400 mt-1" id="kpiR1">1,085.2 MW</div>
+          <div class="text-[10px] text-zinc-400 mt-0.5">Telemetry block 48/96</div>
+        </div>
+        <div class="bg-[#111] border border-[#1f1f1f] rounded-lg p-3">
+          <div class="text-[11px] text-zinc-500 uppercase font-bold">Forecast Accuracy (RMSE)</div>
+          <div class="text-xl font-bold text-emerald-400 mt-1" id="kpiRmse">3.82%</div>
+          <div class="text-[10px] text-emerald-500 mt-0.5">Well within CERC &plusmn;10% band</div>
+        </div>
+      </div>
+
+      <!-- Forecast Data Table / Simulated State Container -->
+      <div class="bg-[#111] border border-[#1f1f1f] rounded-lg p-4" id="dataViewContainer">
+        <!-- Rendered dynamically by updateDataView() -->
+      </div>
+    </section>
+
+    <!-- ─── 3. ADMIN VIEW (Plant Registry & Role Controls) ─── -->
+    <section id="viewAdmin" class="space-y-5" style="display: none;">
+      <div class="bg-[#111] border border-[#1f1f1f] rounded-lg p-5">
+        <div class="flex items-center justify-between pb-4 border-b border-[#1f1f1f]">
+          <div>
+            <h2 class="text-sm font-bold text-white uppercase tracking-wider">Administrative Asset Registry</h2>
+            <p class="text-xs text-zinc-400 mt-0.5">Jurisdictional plant management &middot; Enforcing server authorization checks</p>
+          </div>
+          <button onclick="openCreatePlantModal()" id="btnAddPlant" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-black text-xs font-semibold rounded transition">
+            + Add New Generating Station
+          </button>
+        </div>
+
+        <div class="overflow-x-auto mt-4">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-[#222] text-zinc-400 bg-[#161616]">
+                <th class="py-2.5 px-3">Plant Name</th>
+                <th class="py-2.5 px-3">Region</th>
+                <th class="py-2.5 px-3">Type</th>
+                <th class="py-2.5 px-3 text-right">Capacity (MW)</th>
+                <th class="py-2.5 px-3">Pooling Substation</th>
+                <th class="py-2.5 px-3 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminPlantRows" class="divide-y divide-[#1f1f1f] font-mono text-zinc-300">
+              <!-- Rendered via renderAdminPlants() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // State Model
+    let currentUser = null;
+    let currentSimulationState = 'success'; // 'loading', 'success', 'empty', 'error'
+    let plantsData = [
+      { id: '1', name: 'Charanka Solar Park - Block 1', region: 'Gujarat (GJ)', type: 'SOLAR', mw: 250.0, sub: 'Charanka 400kV' },
+      { id: '2', name: 'Bhadla Solar Phase II', region: 'Rajasthan (RJ)', type: 'SOLAR', mw: 500.0, sub: 'Bhadla Pooling' },
+      { id: '3', name: 'Khavda Renewable Hybrid Unit 1', region: 'Gujarat (GJ)', type: 'WIND', mw: 300.0, sub: 'Khavda PS-1' },
+      { id: '4', name: 'Dhule Wind Farm Block A', region: 'Maharashtra (MH)', type: 'WIND', mw: 200.0, sub: 'Dhule 220kV' }
+    ];
+
+    function handleLogin() {
+      const role = document.getElementById('loginRoleSelect').value;
+      const roleNames = {
+        super_admin: 'Chief Grid Administrator',
+        region_admin: 'Western Region Dispatcher',
+        state_admin: 'Gujarat SLDC Operator'
+      };
+
+      currentUser = {
+        uname: role + '_user',
+        role: role,
+        displayName: roleNames[role]
+      };
+
+      document.getElementById('userDisplayName').innerText = currentUser.displayName;
+      document.getElementById('userRoleBadge').innerText = role.toUpperCase();
+      document.getElementById('userStatusDot').className = 'w-2 h-2 rounded-full bg-emerald-500';
+
+      document.getElementById('navContainer').style.display = 'flex';
+      switchView('dashboard');
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      document.getElementById('userDisplayName').innerText = 'Guest (Logged Out)';
+      document.getElementById('userRoleBadge').innerText = 'NONE';
+      document.getElementById('userStatusDot').className = 'w-2 h-2 rounded-full bg-zinc-600';
+      document.getElementById('navContainer').style.display = 'none';
+      switchView('login');
+    }
+
+    function switchView(view) {
+      document.getElementById('viewLogin').style.display = view === 'login' ? 'flex' : 'none';
+      document.getElementById('viewDashboard').style.display = view === 'dashboard' ? 'block' : 'none';
+      document.getElementById('viewAdmin').style.display = view === 'admin' ? 'block' : 'none';
+
+      if (view === 'dashboard') {
+        document.getElementById('navDashboard').className = 'px-3 py-1.5 text-xs font-medium tab-active transition';
+        document.getElementById('navAdmin').className = 'px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-amber-400 transition';
+        updateDataView();
+      } else if (view === 'admin') {
+        document.getElementById('navAdmin').className = 'px-3 py-1.5 text-xs font-medium tab-active transition';
+        document.getElementById('navDashboard').className = 'px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-amber-400 transition';
+        renderAdminPlants();
+      }
+    }
+
+    function setSimulationState(st) {
+      currentSimulationState = st;
+      updateDataView();
+    }
+
+    function triggerFilterUpdate() {
+      const reg = document.getElementById('filterRegion').value;
+      const typ = document.getElementById('filterType').value;
+      const dt = document.getElementById('filterDate').value;
+      const rev = document.getElementById('filterRev').value;
+      const q = document.getElementById('filterSearch').value.trim();
+
+      const params = new URLSearchParams();
+      if (reg) params.set('region', reg);
+      if (typ !== 'ALL') params.set('type', typ);
+      if (dt) params.set('date', dt);
+      if (rev) params.set('revision', rev);
+      if (q) params.set('q', q);
+
+      document.getElementById('queryPreview').innerText = `/api/series?${params.toString()}`;
+      updateDataView();
+    }
+
+    function updateDataView() {
+      const container = document.getElementById('dataViewContainer');
+
+      if (currentSimulationState === 'loading') {
+        container.innerHTML = `
+          <div class="py-12 flex flex-col items-center justify-center space-y-3">
+            <div class="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-xs text-zinc-400">Querying 15-minute time-block predictions from server...</p>
+            <div class="w-full max-w-md space-y-2 mt-4">
+              <div class="h-3 bg-[#1c1c1c] rounded animate-pulse"></div>
+              <div class="h-3 bg-[#1c1c1c] rounded w-5/6 animate-pulse"></div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (currentSimulationState === 'error') {
+        container.innerHTML = `
+          <div class="p-4 rounded-lg bg-red-950/40 border border-red-700/60 text-red-200">
+            <div class="flex items-start gap-3">
+              <span class="text-xl">⚠️</span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-xs font-bold text-red-400">HTTP 500 &mdash; Internal Server Error (Database Pool Exhaustion)</h4>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-red-900 border border-red-800 text-red-300">500 SERVER_ERROR</span>
+                </div>
+                <p class="text-xs text-red-300 mt-1">Failed to fetch time-series forecast records. Real failure preserved; NOT masked as empty list.</p>
+                <div class="mt-3">
+                  <button onclick="setSimulationState('success')" class="px-3 py-1 bg-red-800 hover:bg-red-700 text-white text-xs font-medium rounded transition">
+                    Retry Request
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (currentSimulationState === 'empty') {
+        container.innerHTML = `
+          <div class="py-12 text-center">
+            <div class="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1c1c1c] flex items-center justify-center text-zinc-500">📂</div>
+            <h3 class="text-xs font-semibold text-zinc-300">No Telemetry Recorded</h3>
+            <p class="text-[11px] text-zinc-500 mt-1">No forecast runs match the selected criteria. Try adjusting date or region filters.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Success State
+      container.innerHTML = `
+        <div class="flex items-center justify-between pb-3 border-b border-[#1f1f1f]">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-white">15-Minute Generation Telemetry (Success State)</h3>
+          <span class="text-[11px] text-emerald-400 font-mono">Status: HTTP 200 OK &middot; 96 Time Blocks</span>
+        </div>
+        <div class="mt-3 overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead>
+              <tr class="text-zinc-500 border-b border-[#222]">
+                <th class="py-2 px-3">Time Block (IST)</th>
+                <th class="py-2 px-3 text-right">R0 Forecast (MW)</th>
+                <th class="py-2 px-3 text-right">R1 Forecast (MW)</th>
+                <th class="py-2 px-3 text-right">Actual Power (MW)</th>
+                <th class="py-2 px-3 text-center">Variance Band</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#181818] text-zinc-300">
+              <tr><td class="py-2 px-3">11:45 &mdash; 12:00</td><td class="py-2 px-3 text-right text-amber-400">1,090.5</td><td class="py-2 px-3 text-right text-cyan-400">1,075.0</td><td class="py-2 px-3 text-right text-emerald-400">1,080.2</td><td class="py-2 px-3 text-center text-emerald-400 font-bold">&plusmn;0.9%</td></tr>
+              <tr><td class="py-2 px-3">12:00 &mdash; 12:15</td><td class="py-2 px-3 text-right text-amber-400">1,115.0</td><td class="py-2 px-3 text-right text-cyan-400">1,090.2</td><td class="py-2 px-3 text-right text-emerald-400">1,095.4</td><td class="py-2 px-3 text-center text-emerald-400 font-bold">&plusmn;1.7%</td></tr>
+              <tr><td class="py-2 px-3">12:15 &mdash; 12:30</td><td class="py-2 px-3 text-right text-amber-400">1,120.4</td><td class="py-2 px-3 text-right text-cyan-400">1,085.2</td><td class="py-2 px-3 text-right text-emerald-400">1,082.0</td><td class="py-2 px-3 text-center text-emerald-400 font-bold">&plusmn;3.4%</td></tr>
+              <tr><td class="py-2 px-3">12:30 &mdash; 12:45</td><td class="py-2 px-3 text-right text-amber-400">1,110.8</td><td class="py-2 px-3 text-right text-cyan-400">1,078.0</td><td class="py-2 px-3 text-right text-emerald-400">1,072.5</td><td class="py-2 px-3 text-center text-emerald-400 font-bold">&plusmn;3.4%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderAdminPlants() {
+      const tbody = document.getElementById('adminPlantRows');
+      tbody.innerHTML = plantsData.map(p => `
+        <tr class="hover:bg-[#161616] transition">
+          <td class="py-2.5 px-3 font-sans text-white font-medium">${p.name}</td>
+          <td class="py-2.5 px-3 text-zinc-400">${p.region}</td>
+          <td class="py-2.5 px-3">
+            <span class="px-2 py-0.5 rounded text-[10px] ${p.type === 'SOLAR' ? 'bg-amber-950 text-amber-400 border border-amber-800' : 'bg-cyan-950 text-cyan-400 border border-cyan-800'}">${p.type}</span>
+          </td>
+          <td class="py-2.5 px-3 text-right text-emerald-400 font-bold">${p.mw.toFixed(1)}</td>
+          <td class="py-2.5 px-3 text-zinc-400">${p.sub}</td>
+          <td class="py-2.5 px-3 text-center">
+            <button onclick="handleAdminAction('${p.id}', '${p.name}')" class="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[11px] rounded border border-zinc-700 transition">
+              Edit
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function handleAdminAction(id, name) {
+      if (!currentUser || currentUser.role === 'state_admin') {
+        alert('SECURITY REJECTION (HTTP 403 Forbidden):\\n\\nState Admin is restricted to read-only views. Modification denied by server RBAC.');
+        return;
+      }
+      alert(`AUTHORIZED (Role: ${currentUser.role}):\\n\\nOpening edit dialogue for plant "${name}".`);
+    }
+
+    function openCreatePlantModal() {
+      if (!currentUser || currentUser.role === 'state_admin') {
+        alert('SECURITY REJECTION (HTTP 403 Forbidden):\\n\\nState Admin lacks plant creation privileges. Request blocked.');
+        return;
+      }
+      const newName = prompt('Enter Plant Name to create (Mock Transaction):', 'Bhadla Phase III Extension');
+      if (newName) {
+        plantsData.push({
+          id: String(Date.now()),
+          name: newName,
+          region: 'Gujarat (GJ)',
+          type: 'SOLAR',
+          mw: 150.0,
+          sub: 'Charanka PS-2'
+        });
+        renderAdminPlants();
+        alert('Plant successfully created in isolated mock store!');
+      }
+    }
+  </script>
+</body>
+</html>

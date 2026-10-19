@@ -196,3 +196,4 @@ Test 13: Component state transitions to error and NEVER masks failure as empty d
 ## 8. Conclusion & Deliverable Status
 
 Task 05 concludes the Week 1 training curriculum. By identifying the server runtime limitations of GitHub Pages, specifying isolated hosting on Vercel/Railway, defining sanitized environment variables, and validating a 10-point deployment-readiness checklist against clean local builds, the project mentor has all necessary assets to safely review and approve the training slice.
+
