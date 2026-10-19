@@ -1,0 +1,417 @@
+{
+  "info": {
+    "_postman_id": "a4d3f56e-8b12-4c90-9512-gi-iitb-v2-sanitized",
+    "name": "GRID-IITB V2 Forecasting & Governance API (Sanitized)",
+    "description": "Sanitized Postman Collection for GRID-IITB local training and sandbox verification.\nZero production secrets or hardcoded passwords.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "testUsername",
+      "value": "admin",
+      "type": "string"
+    },
+    {
+      "key": "testPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health & Infrastructure Status",
+      "item": [
+        {
+          "name": "Health Probe (DB & Service Readiness)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Public readiness probe. Checks database connectivity (SELECT 1). Returns 200 OK."
+          },
+          "response": [
+            {
+              "name": "Healthy Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"ok\": true,\n  \"ts\": \"2026-10-19T08:30:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "System Maintenance Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "status"]
+            },
+            "description": "Public status endpoint. Checks if maintenance mode is enabled."
+          },
+          "response": [
+            {
+              "name": "Normal Mode",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"maintenance\": false\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Authentication & Identity",
+      "item": [
+        {
+          "name": "Operator Login (Issue Token & Cookie)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Auto-capture token into collection variable if present",
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.token) {",
+                  "        pm.collectionVariables.set(\"authToken\", jsonData.data.token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{testUsername}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth"]
+            },
+            "description": "Authenticates operator credentials with bcrypt. Returns JWT token and sets HttpOnly cookie."
+          },
+          "response": [
+            {
+              "name": "Successful Login",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Set-Cookie",
+                  "value": "token=eyJhbGciOiJIUzI1NiIsInR5cCI...; Path=/; HttpOnly; SameSite=Lax"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"role\": \"super_admin\",\n    \"uname\": \"admin\",\n    \"displayName\": \"National Despatch Lead\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Session Logout (Expire Cookie)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Invalidates active session cookie."
+          },
+          "response": [
+            {
+              "name": "Logged Out",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"ok\": true\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Permitted Read Operations",
+      "item": [
+        {
+          "name": "Get Authorized Regions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/regions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "regions"]
+            },
+            "description": "Protected endpoint. Returns state and ISTS control areas filtered by caller's permissions."
+          },
+          "response": [
+            {
+              "name": "Authorized Regions List",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"items\": [\n      {\n        \"regionId\": \"d290f1ee-6c54-4b01-90e6-d701748f0851\",\n        \"regionCode\": \"GJ\",\n        \"regionName\": \"Gujarat SLDC\",\n        \"regionType\": \"state\"\n      },\n      {\n        \"regionId\": \"c180e2aa-5b43-4a00-80e5-c601637e0740\",\n        \"regionCode\": \"MH\",\n        \"regionName\": \"Maharashtra SLDC\",\n        \"regionType\": \"state\"\n      },\n      {\n        \"regionId\": \"b070d199-4a32-49ff-70d4-b500526d0630\",\n        \"regionCode\": \"WR-ISTS\",\n        \"regionName\": \"Western Region ISTS\",\n        \"regionType\": \"ists\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Monitored Generation Plants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/plants?region_id=d290f1ee-6c54-4b01-90e6-d701748f0851",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "plants"],
+              "query": [
+                {
+                  "key": "region_id",
+                  "value": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                  "description": "Target region UUID"
+                }
+              ]
+            },
+            "description": "Protected read endpoint. Returns plants in authorized region."
+          },
+          "response": [
+            {
+              "name": "Filtered Plants Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"items\": [\n      {\n        \"plantId\": \"a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d\",\n        \"plantCode\": \"ACL_PSS3_KPS1_S\",\n        \"plantName\": \"Adani Solar Khavda 1\",\n        \"installedCapacityMw\": 300.0,\n        \"genType\": \"solar\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Validated Demo API Operation (Task 5)",
+      "item": [
+        {
+          "name": "Valid Telemetry Query (200 OK)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plantCode\": \"ACL_PSS3_KPS1_S\",\n  \"date\": \"2026-10-19\",\n  \"region\": \"GJ\",\n  \"model\": \"NOWCASTING\",\n  \"blockCount\": 96\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/training/telemetry-inspect",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "training", "telemetry-inspect"]
+            },
+            "description": "Valid request exercising 96-block telemetry generation with valid ISO date, plant code, and region."
+          },
+          "response": [
+            {
+              "name": "Valid 200 OK Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"ok\": true,\n  \"data\": {\n    \"plantCode\": \"ACL_PSS3_KPS1_S\",\n    \"region\": \"GJ\",\n    \"date\": \"2026-10-19\",\n    \"model\": \"NOWCASTING\",\n    \"blockCount\": 96,\n    \"summary\": {\n      \"peakPredMw\": 280.0,\n      \"peakActualMw\": 268.4,\n      \"avgCoveragePct\": 100.0,\n      \"telemetryStatus\": \"NORMAL\"\n    },\n    \"blocks\": [\n      {\n        \"blockIndex\": 1,\n        \"timeIst\": \"00:00\",\n        \"ghiWm2\": 0,\n        \"powerPredMw\": 0.0,\n        \"powerActualMw\": 0.0\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Invalid Date Format (400 Bad Request)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plantCode\": \"ACL_PSS3_KPS1_S\",\n  \"date\": \"19-10-2026\",\n  \"region\": \"GJ\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/training/telemetry-inspect",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "training", "telemetry-inspect"]
+            },
+            "description": "Negative case: Malformed date (19-10-2026 instead of YYYY-MM-DD)."
+          },
+          "response": [
+            {
+              "name": "Invalid Date 400 Error",
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"ok\": false,\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"field\": \"date\",\n    \"message\": \"Field \\\"date\\\" must follow YYYY-MM-DD format (e.g. 2026-10-19). Received: \\\"19-10-2026\\\"\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Invalid Region Code (400 Bad Request)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plantCode\": \"ACL_PSS3_KPS1_S\",\n  \"date\": \"2026-10-19\",\n  \"region\": \"UNKNOWN_GRID\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/training/telemetry-inspect",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "training", "telemetry-inspect"]
+            },
+            "description": "Negative case: Invalid region code rejected by server validation enum."
+          },
+          "response": [
+            {
+              "name": "Invalid Region 400 Error",
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"ok\": false,\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"field\": \"region\",\n    \"message\": \"Invalid region: \\\"UNKNOWN_GRID\\\". Permitted control areas: GJ, MH, MP, CG, ISTS.\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
